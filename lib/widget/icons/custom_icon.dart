@@ -34,7 +34,10 @@ class CustomIcon extends StatelessWidget {
         _fullPath,
         width: size,
         height: size,
-        color: color,
+        colorFilter: ColorFilter.mode(
+          color ?? Colors.transparent,
+          BlendMode.srcIn,
+        ),
         fit: fit,
         semanticsLabel: semanticLabel,
       );

@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 
-class IconWidget extends StatelessWidget {
+class MainItemIcon extends StatelessWidget {
   final IconData? iconData;
   final String? assetName;
-  final double size;
+  final double? size;
   final Color? color;
 
-  const IconWidget({
+  const MainItemIcon({
     super.key,
     this.iconData,
     this.assetName,

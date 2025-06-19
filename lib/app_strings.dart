@@ -13,4 +13,8 @@ class AppStrings {
   static const String navHome = 'الرئيسية';
   static const String navSearch = 'البحث';
   static const String navSheikh = 'الشيخ';
+  static const String levels = 'المستويات';
+  static const String categories = 'التصنيفات';
+  static const String allMaterials = 'جميع الدروس';
+  static const String instituteLibrary = 'مكتبة المعهد';
 }

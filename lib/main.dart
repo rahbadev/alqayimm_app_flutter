@@ -1,20 +1,20 @@
-import 'package:alqayimm_app_flutter/db/db_helper.dart';
-import 'package:alqayimm_app_flutter/screens/main/site_screen.dart';
+import 'package:alqayimm_app_flutter/db/main/db_helper.dart';
+import 'package:alqayimm_app_flutter/screens/website/website_screen.dart';
 import 'package:alqayimm_app_flutter/app_strings.dart';
 import 'package:alqayimm_app_flutter/theme/theme.dart';
 import 'package:alqayimm_app_flutter/theme/util.dart';
 import 'package:alqayimm_app_flutter/theme/util.dart' as util;
 import 'package:alqayimm_app_flutter/widget/main_bottom_nav_bar.dart';
 import 'package:flutter/material.dart';
-import 'package:alqayimm_app_flutter/screens/main/bookmarks_screen.dart';
-import 'package:alqayimm_app_flutter/screens/main/home_screen.dart';
-import 'package:alqayimm_app_flutter/screens/main/search_screen.dart';
-import 'package:alqayimm_app_flutter/screens/main/shik_screen.dart';
+import 'package:alqayimm_app_flutter/screens/bookmarks/bookmarks_screen.dart';
+import 'package:alqayimm_app_flutter/screens/institute/institute_screen.dart';
+import 'package:alqayimm_app_flutter/screens/search/search_screen.dart';
+import 'package:alqayimm_app_flutter/screens/shik/shik_screen.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:logging/logging.dart';
-import 'package:alqayimm_app_flutter/screens/main/settings_screen.dart';
+import 'package:alqayimm_app_flutter/screens/settings/settings_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 final themeModeNotifier = ValueNotifier<ThemeMode>(ThemeMode.system);
@@ -23,6 +23,7 @@ final GlobalKey<SiteScreenState> siteScreenKey = GlobalKey<SiteScreenState>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   await DbHelper.database; // فتح القاعدة هنا
   // استرجاع اختيار المستخدم
   final prefs = await SharedPreferences.getInstance();
@@ -181,11 +182,11 @@ class _MyHomePageState extends State<MyHomePage> {
           controller: _pageController,
           physics: const NeverScrollableScrollPhysics(), // يمنع السحب باليد
           children: [
-            ShikScreen(),
+            BookmarksScreen(),
             SiteScreen(key: siteScreenKey),
             HomeScreen(),
             SearchScreen(),
-            BookmarksScreen(),
+            ShikScreen(),
           ],
         ),
         bottomNavigationBar: MainBottomNavBar(
