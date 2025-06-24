@@ -5,6 +5,9 @@ class MaterialModel {
   final int? authorId;
   final int? levelId;
   final int? categoryId;
+  final String? authorName;    // جديد
+  final String? levelName;     // جديد
+  final String? categoryName;  // جديد
 
   MaterialModel({
     required this.id,
@@ -13,6 +16,9 @@ class MaterialModel {
     this.authorId,
     this.levelId,
     this.categoryId,
+    this.authorName,
+    this.levelName,
+    this.categoryName,
   });
 
   factory MaterialModel.fromMap(Map<String, dynamic> map) {
@@ -23,6 +29,9 @@ class MaterialModel {
       authorId: map['author_id'] as int?,
       levelId: map['level_id'] as int?,
       categoryId: map['category_id'] as int?,
+      authorName: map['author_name'] as String?,      // جديد
+      levelName: map['level_name'] as String?,        // جديد
+      categoryName: map['category_name'] as String?,  // جديد
     );
   }
 }

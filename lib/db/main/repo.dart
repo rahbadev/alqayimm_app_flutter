@@ -1,6 +1,8 @@
 import 'package:alqayimm_app_flutter/db/main/db_constants.dart';
-import 'package:alqayimm_app_flutter/db/main/enmus.dart';
+import 'package:alqayimm_app_flutter/db/main/enums.dart';
+import 'package:alqayimm_app_flutter/main.dart';
 import 'package:alqayimm_app_flutter/models/main_db/book_model.dart';
+import 'package:alqayimm_app_flutter/models/main_db/lesson_model.dart';
 import 'package:alqayimm_app_flutter/models/main_db/material_model.dart';
 import 'package:alqayimm_app_flutter/models/main_db/type_model.dart';
 import 'package:sqflite/sqflite.dart';
@@ -132,11 +134,22 @@ ORDER BY $orderBy;
             : 'm.${DbConstants.MATERIALS_LEVEL_ID}';
 
     final sql = '''
-SELECT m.*
+SELECT 
+  m.*,
+  a.${DbConstants.AUTHORS_NAME} AS author_name,
+  l.${DbConstants.LEVELS_NAME} AS level_name,
+  c.${DbConstants.CATEGORIES_NAME} AS category_name
 FROM ${DbConstants.MATERIALS_TABLE} m
+LEFT JOIN ${DbConstants.AUTHORS_TABLE} a
+  ON m.${DbConstants.MATERIALS_AUTHOR_ID} = a.${DbConstants.AUTHORS_ID}
+LEFT JOIN ${DbConstants.LEVELS_TABLE} l
+  ON m.${DbConstants.MATERIALS_LEVEL_ID} = l.${DbConstants.LEVELS_ID}
+LEFT JOIN ${DbConstants.CATEGORIES_TABLE} c
+  ON m.${DbConstants.MATERIALS_CATEGORY_ID} = c.${DbConstants.CATEGORIES_ID}
 ${wb.sql()}
 ORDER BY $orderCol;
 ''';
+
     final rows = await _db.rawQuery(sql, wb.args);
     return rows.map(MaterialModel.fromMap).toList();
   }
@@ -164,11 +177,19 @@ ORDER BY $orderCol;
     };
 
     final sql = '''
-SELECT b.*
+SELECT 
+  b.*,
+  a.${DbConstants.AUTHORS_NAME} AS author_name,
+  c.${DbConstants.CATEGORIES_NAME} AS category_name
 FROM ${DbConstants.BOOKS_TABLE} b
+LEFT JOIN ${DbConstants.AUTHORS_TABLE} a
+  ON b.${DbConstants.BOOKS_AUTHOR_ID} = a.${DbConstants.AUTHORS_ID}
+LEFT JOIN ${DbConstants.CATEGORIES_TABLE} c
+  ON b.${DbConstants.BOOKS_CATEGORY_ID} = c.${DbConstants.CATEGORIES_ID}
 ${wb.sql()}
 ORDER BY $orderCol;
 ''';
+
     final rows = await _db.rawQuery(sql, wb.args);
     return rows.map(BookModel.fromMap).toList();
   }
@@ -236,5 +257,74 @@ LEFT JOIN ${DbConstants.BOOKS_TABLE} b
 
     final rows = await _db.rawQuery(sql, wb.args);
     return rows.map(BookTypeModel.fromMap).toList();
+  }
+
+  /*─────────────────── 5. جلب الدروس (Lessons) ───────────────────*/
+  Future<List<LessonModel>> fetchLessons({
+    int? materialId,
+    int? authorId,
+    int? levelId,
+    int? categoryId,
+    LessonOrderBy order = LessonOrderBy.id,
+  }) async {
+    final wb = WhereBuilder();
+
+    if (materialId != null) {
+      wb.eq('l.material_id', materialId);
+    }
+    if (authorId != null) {
+      wb.eq('m.author_id', authorId);
+    }
+    if (levelId != null) {
+      wb.eq('m.level_id', levelId);
+    }
+    if (categoryId != null) {
+      wb.eq('m.category_id', categoryId);
+    }
+
+    String orderCol;
+    switch (order) {
+      case LessonOrderBy.id:
+        orderCol = 'l.id';
+        break;
+      case LessonOrderBy.lessonNumber:
+        orderCol = 'l.lesson_number';
+        break;
+      case LessonOrderBy.name:
+        orderCol = 'l.lesson_name COLLATE NOCASE';
+        break;
+    }
+
+    final sql = '''
+SELECT
+  l.id,
+  l.lesson_name AS name,
+  l.material_id,
+  l.lesson_number,
+  m.author_id,
+  m.level_id,
+  m.category_id,
+  l.about_lesson,
+  l.url,
+  l.ver AS lessonVer,
+  l.about_ver,
+  a.name AS author_name,
+  c.name AS category_name,
+  v.name AS level_name,
+  l.download_status,
+  l.is_completed,
+  l.is_favorite
+FROM lessons_table l
+JOIN materials_table m ON l.material_id = m.id
+LEFT JOIN authors_table a ON m.author_id = a.id
+LEFT JOIN categories_table c ON m.category_id = c.id
+LEFT JOIN levels_table v ON m.level_id = v.id
+${wb.sql()}
+ORDER BY $orderCol;
+''';
+
+    final rows = await _db.rawQuery(sql, wb.args);
+    logger.info('Fetched ${rows.length} lessons with query: $sql');
+    return rows.map(LessonModel.fromMap).toList();
   }
 }

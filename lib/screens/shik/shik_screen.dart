@@ -1,34 +1,17 @@
-import 'package:alqayimm_app_flutter/db/main/enmus.dart';
+import 'package:alqayimm_app_flutter/db/main/enums.dart';
 import 'package:alqayimm_app_flutter/db/main/repo.dart';
-import 'package:alqayimm_app_flutter/models/main_db/type_model.dart';
+import 'package:alqayimm_app_flutter/utils/app_icons.dart';
 import 'package:alqayimm_app_flutter/widget/icons/main_item_icon.dart';
-import 'package:alqayimm_app_flutter/widget/lists/main_items_list.dart';
 import 'package:alqayimm_app_flutter/screens/global/types_list_screen.dart';
-import 'package:alqayimm_app_flutter/transitions/fade_slide_route.dart';
 import 'package:alqayimm_app_flutter/widget/cards/main_item.dart';
+import 'package:alqayimm_app_flutter/widget/lists/main_items_list.dart';
 import 'package:flutter/material.dart';
 import 'package:alqayimm_app_flutter/db/main/db_helper.dart';
 
-class ShikScreen extends StatefulWidget {
+class ShikScreen extends StatelessWidget {
   const ShikScreen({super.key});
-  @override
-  State<ShikScreen> createState() => _ShikScreenState();
-}
 
-class _ShikScreenState extends State<ShikScreen> {
-  List<CategoryModel> booksCategories = [];
-  List<CategoryModel> materialsCategories = [];
-  int booksCount = 0;
-  int materialsCount = 0;
-  bool loading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    fetchCounts();
-  }
-
-  Future<void> fetchCounts() async {
+  Future<List<MainItem>> _fetchMainItems(BuildContext context) async {
     final db = await DbHelper.database;
     final repo = Repo(db);
     final booksCategories = await repo.fetchCategories(
@@ -41,72 +24,55 @@ class _ShikScreenState extends State<ShikScreen> {
       levelSel: LevelSel.all(),
     );
 
-    setState(() {
-      this.booksCategories = booksCategories;
-      this.materialsCategories = materialsCategories;
-      booksCount = booksCategories.length;
-      materialsCount = materialsCategories.length;
-      loading = false;
-    });
+    return [
+      MainItem(
+        leadingContent: IconLeading(icon: AppIcons.mainMaterials),
+        title: 'دروس الشيخ',
+        details: [
+          MainItemDetail(
+            text: 'عدد الدروس : ${materialsCategories.length}',
+            icon: AppIcons.smallMaterials,
+            iconColor: Colors.pink,
+          ),
+        ],
+        onItemTap:
+            (item) => TypesListScreen.navigateToScreen(
+              context,
+              item.title,
+              materialsCategories,
+              true,
+              false,
+              Icons.library_music,
+            ),
+      ),
+      MainItem(
+        leadingContent: IconLeading(icon: AppIcons.mainBooksLibrary),
+        title: 'مكتبة الشيخ',
+        details: [
+          MainItemDetail(
+            text: 'عدد الكتب : ${booksCategories.length}',
+            icon: AppIcons.smallCategoryBook,
+            iconColor: Colors.teal,
+          ),
+        ],
+        onItemTap:
+            (item) => TypesListScreen.navigateToScreen(
+              context,
+              item.title,
+              booksCategories,
+              true,
+              true,
+              AppIcons.itemCategoryBook,
+            ),
+      ),
+    ];
   }
 
   @override
   Widget build(BuildContext context) {
-    if (loading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    return MainItemsList(
-      items: [
-        MainItem(
-          leadingContent: IconLeading(icon: Icons.library_music),
-          title: 'دروس الشيخ',
-          details: [
-            MainItemDetail(
-              text: 'عدد الدروس : $materialsCount',
-              icon: Icons.music_note,
-              iconColor: Colors.pink,
-            ),
-          ],
-        ),
-        MainItem(
-          leadingContent: IconLeading(icon: Icons.library_books),
-          title: 'مكتبة الشيخ',
-          details: [
-            MainItemDetail(
-              text: 'عدد الكتب : $booksCount',
-              icon: Icons.book_sharp,
-              iconColor: Colors.teal,
-            ),
-          ],
-        ),
-      ],
-      onItemTap: (item, index) {
-        if (index == 0) {
-          Navigator.push(
-            context,
-            fadeSlideRoute(
-              TypesListScreen(
-                title: item.title,
-                items: materialsCategories,
-                forShik: true,
-                isBooks: false,
-              ),
-            ),
-          );
-        } else if (index == 1) {
-          Navigator.push(
-            context,
-            fadeSlideRoute(
-              TypesListScreen(
-                title: item.title,
-                items: booksCategories,
-                forShik: true,
-                isBooks: true,
-              ),
-            ),
-          );
-        }
-      },
+    return MainItemsListView<MainItem>(
+      itemsFuture: _fetchMainItems(context),
+      itemBuilder: (item, index) => item,
     );
   }
 }

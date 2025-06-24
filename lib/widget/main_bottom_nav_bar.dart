@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:circle_nav_bar/circle_nav_bar.dart';
-import 'package:alqayimm_app_flutter/app_strings.dart';
+import 'package:alqayimm_app_flutter/utils/app_strings.dart';
 import 'package:alqayimm_app_flutter/widget/icons/button_nav_bar_icon.dart';
 
 class MainBottomNavBar extends StatelessWidget {

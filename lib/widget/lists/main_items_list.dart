@@ -2,71 +2,73 @@ import 'package:flutter/material.dart';
 import 'package:alqayimm_app_flutter/widget/cards/main_item.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 
-typedef MainItemTapCallback = void Function(MainItem item, int index);
-
-class MainItemsList extends StatefulWidget {
-  final List<MainItem> items;
-  final MainItemTapCallback? onItemTap;
+class MainItemsListView<T> extends StatelessWidget {
+  final Future<List<T>>? itemsFuture;
+  final List<T>? items;
+  final MainItem Function(T item, int index) itemBuilder;
+  final String emptyText;
   final double titleFontSize;
 
-  const MainItemsList({
+  const MainItemsListView({
     super.key,
-    required this.items,
-    this.onItemTap,
+    this.itemsFuture,
+    this.items,
+    required this.itemBuilder,
+    this.emptyText = 'لا توجد بيانات',
     this.titleFontSize = 30,
-  });
-
-  @override
-  State<MainItemsList> createState() => _MainItemsListState();
-}
-
-class _MainItemsListState extends State<MainItemsList>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 700),
-    );
-    _controller.forward();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
+  }) : assert(itemsFuture != null || items != null);
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-      child: AnimationLimiter(
-        child: ListView.builder(
-          itemCount: widget.items.length,
-          itemBuilder: (BuildContext context, int index) {
-            return AnimationConfiguration.staggeredList(
-              position: index,
-              duration: const Duration(milliseconds: 375),
-              child: SlideAnimation(
-                verticalOffset: 50.0,
-                child: FadeInAnimation(
-                  child: MainItemCard(
-                    mainItem: widget.items[index],
-                    titleFontSize: widget.titleFontSize,
-                    onTap:
-                        () =>
-                            widget.onItemTap?.call(widget.items[index], index),
+    Widget buildList(List<T> data) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+        child: AnimationLimiter(
+          child: ListView.builder(
+            itemCount: data.length,
+            itemBuilder: (BuildContext context, int index) {
+              return AnimationConfiguration.staggeredList(
+                position: index,
+                duration: const Duration(milliseconds: 375),
+                child: SlideAnimation(
+                  verticalOffset: 50.0,
+                  child: FadeInAnimation(
+                    child: MainItemCard(
+                      mainItem: itemBuilder(data[index], index),
+                      titleFontSize: titleFontSize,
+                    ),
                   ),
                 ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
-      ),
-    );
+      );
+    }
+
+    if (itemsFuture != null) {
+      return FutureBuilder<List<T>>(
+        future: itemsFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text('حدث خطأ في جلب البيانات'));
+          }
+          final data = snapshot.data ?? [];
+          if (data.isEmpty) {
+            return Center(child: Text(emptyText));
+          }
+          return buildList(data);
+        },
+      );
+    } else if (items != null) {
+      if (items!.isEmpty) {
+        return Center(child: Text(emptyText));
+      }
+      return buildList(items!);
+    }
+    return const SizedBox.shrink();
   }
 }

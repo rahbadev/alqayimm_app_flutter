@@ -1,6 +1,6 @@
 import 'package:alqayimm_app_flutter/db/main/db_helper.dart';
 import 'package:alqayimm_app_flutter/screens/website/website_screen.dart';
-import 'package:alqayimm_app_flutter/app_strings.dart';
+import 'package:alqayimm_app_flutter/utils/app_strings.dart';
 import 'package:alqayimm_app_flutter/theme/theme.dart';
 import 'package:alqayimm_app_flutter/theme/util.dart';
 import 'package:alqayimm_app_flutter/theme/util.dart' as util;
@@ -46,11 +46,8 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    TextTheme textTheme = createTextTheme(
-      context,
-      "IBM Plex Sans Arabic",
-      "IBM Plex Sans Arabic",
-    );
+    String fontName = "Tajawal";
+    TextTheme textTheme = createTextTheme(context, fontName, fontName);
     MaterialTheme theme = MaterialTheme(textTheme);
 
     return ValueListenableBuilder<ThemeMode>(

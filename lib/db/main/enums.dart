@@ -101,8 +101,16 @@ class BookTypeOnly extends BookTypeSel {
   }
 }
 
+enum DownloadStatus {
+  downloading, // جاري التحميل
+  downloaded, // تم التحميل
+  notDownloaded, // لم يتم تحميله
+}
+
 /// ترتيب عرض المواد
 enum MaterialOrderBy { level, category }
+
+enum LessonOrderBy { id, lessonNumber, name }
 
 /// ترتيب عرض الكتب
 enum BooksOrderBy { name, author, category, type }

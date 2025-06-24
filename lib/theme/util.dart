@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// إنشاء TextTheme مخصص باستخدام Google Fonts
 TextTheme createTextTheme(
   BuildContext context,
   String bodyFontString,
@@ -28,9 +29,9 @@ TextTheme createTextTheme(
   return textTheme;
 }
 
+/// تبديل وضع الثيم (نهاري/ليلي)
 Future<void> toggleThemeMode() async {
   final prefs = await SharedPreferences.getInstance();
-  // تبديل الوضع الحالي
   if (themeModeNotifier.value == ThemeMode.light) {
     themeModeNotifier.value = ThemeMode.dark;
     await prefs.setInt('themeMode', ThemeMode.dark.index);

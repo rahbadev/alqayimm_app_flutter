@@ -1,8 +1,9 @@
 import 'package:flutter/cupertino.dart';
 
+/// أنواع التصنيفات
 enum Type { category, level, bookType }
 
-// كلاس أساسي
+/// الكلاس الأساسي للأنواع (تصنيف/مستوى/نوع كتاب)
 class TypeModel {
   final int id;
   final String name;
@@ -19,8 +20,7 @@ class TypeModel {
   });
 }
 
-@override
-// التصنيفات
+/// التصنيفات
 class CategoryModel extends TypeModel {
   CategoryModel({
     required super.id,
@@ -38,7 +38,7 @@ class CategoryModel extends TypeModel {
   }
 }
 
-// المستويات
+/// المستويات
 class LevelModel extends TypeModel {
   LevelModel({
     required super.id,
@@ -56,7 +56,7 @@ class LevelModel extends TypeModel {
   }
 }
 
-// أنواع الكتب
+/// أنواع الكتب
 class BookTypeModel extends TypeModel {
   BookTypeModel({
     required super.id,

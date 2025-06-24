@@ -1,55 +1,52 @@
-import 'package:alqayimm_app_flutter/app_strings.dart';
-import 'package:alqayimm_app_flutter/db/main/enmus.dart';
+import 'package:alqayimm_app_flutter/utils/app_icons.dart';
+import 'package:alqayimm_app_flutter/utils/app_strings.dart';
+import 'package:alqayimm_app_flutter/db/main/enums.dart';
 import 'package:alqayimm_app_flutter/db/main/repo.dart';
-import 'package:alqayimm_app_flutter/models/main_db/material_model.dart';
+import 'package:alqayimm_app_flutter/models/main_db/type_model.dart';
 import 'package:alqayimm_app_flutter/widget/icons/main_item_icon.dart';
-import 'package:alqayimm_app_flutter/widget/lists/main_items_list.dart';
 import 'package:alqayimm_app_flutter/screens/global/material_list_screen.dart';
 import 'package:alqayimm_app_flutter/screens/global/types_list_screen.dart';
 import 'package:alqayimm_app_flutter/transitions/fade_slide_route.dart';
 import 'package:alqayimm_app_flutter/widget/cards/main_item.dart';
+import 'package:alqayimm_app_flutter/widget/lists/main_items_list.dart';
 import 'package:flutter/material.dart';
-import 'package:alqayimm_app_flutter/models/main_db/type_model.dart';
 import 'package:alqayimm_app_flutter/db/main/db_helper.dart';
+import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
 
-class _HomeScreenState extends State<HomeScreen> {
-  int levelsCount = 0;
-  int categoriesCount = 0;
-  int materialsCount = 0;
-  int booksCont = 0;
-  List<LevelModel> levels = [];
-  List<CategoryModel> categories = [];
-  List<MaterialModel> materials = [];
-  List<BookTypeModel> instituteLibrary = [];
-  bool loading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    fetchCounts();
-  }
-
-  Future<void> fetchCounts() async {
+  Future<List<MainItem>> _fetchMainItems(BuildContext context) async {
     final db = await DbHelper.database;
     final repo = Repo(db);
 
-    // todo this not used for item but only for counts
-    final levels = await repo.fetchLevels(
-      levelSel: LevelSel.withLevel(),
-      order: TypeOrder.id,
-    );
+    final levels =
+        (await repo.fetchLevels(
+          levelSel: LevelSel.withLevel(),
+          order: TypeOrder.id,
+        )).map((level) {
+          // انسخ الكائن مع إضافة الأيقونة المناسبة
+          return LevelModel(
+            id: level.id,
+            name: level.name,
+            childCount: level.childCount,
+            icon: levelIcon(level.id),
+          );
+        }).toList();
 
-    final categories = await repo.fetchCategories(
-      forBooks: false,
-      levelSel: LevelSel.withLevel(),
-      categorySel: CategorySel.all(),
-    );
+    final categories =
+        (await repo.fetchCategories(
+          forBooks: false,
+          levelSel: LevelSel.withLevel(),
+          categorySel: CategorySel.all(),
+        )).map((category) {
+          return CategoryModel(
+            id: category.id,
+            name: category.name,
+            childCount: category.childCount,
+          );
+        }).toList();
+
     final materials = await repo.fetchMaterials(
       levelSel: LevelSel.withLevel(),
       categorySel: CategorySel.all(),
@@ -57,104 +54,65 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final instituteLibrary = await repo.fetchBookTypes();
 
-    setState(() {
-      this.levels = levels;
-      this.categories = categories;
-      this.materials = materials;
-      this.instituteLibrary = instituteLibrary;
-      levelsCount = levels.length;
-      categoriesCount = categories.length;
-      materialsCount = materials.length;
-      booksCont = instituteLibrary.length;
-      loading = false;
-    });
-  }
+    final levelsCount = levels.length;
+    final categoriesCount = categories.length;
+    final materialsCount = materials.length;
+    final booksCont = instituteLibrary.length;
 
-  List<MainItem> _buidlItems() {
     return [
       MainItem(
         title: AppStrings.levels,
-        leadingContent: IconLeading(icon: Icons.layers),
+        leadingContent: IconLeading(icon: AppIcons.mainLevels),
         details: [
           MainItemDetail(
             text: 'عدد المستويات : $levelsCount',
-            icon: Icons.layers,
+            icon: AppIcons.smallLevel,
             iconColor: Colors.orange,
           ),
         ],
+        onItemTap: (item) {
+          TypesListScreen.navigateToScreen(
+            context,
+            item.title,
+            levels,
+            false,
+            false,
+            AppIcons.itemLevel,
+          );
+        },
       ),
       MainItem(
-        leadingContent: IconLeading(icon: Icons.style),
+        leadingContent: IconLeading(icon: AppIcons.mainCategoryMaterial),
         title: AppStrings.categories,
         details: [
           MainItemDetail(
             text: 'عدد التصنيفات : $categoriesCount',
-            icon: Icons.topic,
+            icon: AppIcons.smallCategoryMaterial,
             iconColor: Colors.blue,
           ),
         ],
+        onItemTap: (item) {
+          TypesListScreen.navigateToScreen(
+            context,
+            item.title,
+            categories,
+            false,
+            false,
+            AppIcons.itemCategoryMaterial,
+          );
+        },
       ),
       MainItem(
-        leadingContent: IconLeading(icon: Icons.library_music),
-        title: AppStrings.allMaterials,
+        leadingContent: IconLeading(icon: AppIcons.mainMaterials),
+        title: "جميع الدروس",
         details: [
           MainItemDetail(
             text: 'عدد المواد : $materialsCount',
-            icon: Icons.music_note,
-            iconColor: Colors.pinkAccent,
+            icon: AppIcons.smallMaterials,
+            iconColor: Colors.deepPurple,
           ),
         ],
-      ),
-      MainItem(
-        leadingContent: IconLeading(icon: Icons.book),
-        title: AppStrings.instituteLibrary,
-        details: [
-          MainItemDetail(
-            text: 'عدد الكتب : $booksCont',
-            icon: Icons.book,
-            iconColor: Colors.teal,
-          ),
-        ],
-      ),
-    ];
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (loading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    return MainItemsList(
-      items: _buidlItems(),
-      onItemTap: (item, index) {
-        if (index == 0) {
-          // المستويات
-          Navigator.push(
-            context,
-            fadeSlideRoute(
-              TypesListScreen(
-                items: levels,
-                title: item.title,
-                forShik: false,
-                isBooks: false,
-              ),
-            ),
-          );
-        } else if (index == 1) {
-          // التصنيفات
-          Navigator.push(
-            context,
-            fadeSlideRoute(
-              TypesListScreen(
-                items: categories,
-                title: item.title,
-                forShik: false,
-                isBooks: false,
-              ),
-            ),
-          );
-        } else if (index == 2) {
-          // جميع المواد
+        onItemTap: (item) {
           Navigator.push(
             context,
             fadeSlideRoute(
@@ -162,24 +120,57 @@ class _HomeScreenState extends State<HomeScreen> {
                 title: item.title,
                 levelSel: LevelSel.withLevel(),
                 categorySel: CategorySel.all(),
-                authorId: null, // لا نحتاج إلى مؤلف هنا
+                authorId: null,
               ),
             ),
           );
-        } else if (index == 3) {
-          Navigator.push(
-            context,
-            fadeSlideRoute(
-              TypesListScreen(
-                items: instituteLibrary,
-                title: item.title,
-                forShik: false,
-                isBooks: true,
-              ),
+        },
+      ),
+      MainItem(
+        leadingContent: IconLeading(icon: AppIcons.mainBooksLibrary),
+        title: "مكتبة المعهد",
+        details: [
+          MainItemDetail(
+            text: 'عدد الكتب : $booksCont',
+            icon: AppIcons.smallCategoryBook,
+            iconColor: Colors.teal,
+          ),
+        ],
+        onItemTap:
+            (item) => TypesListScreen.navigateToScreen(
+              context,
+              item.title,
+              instituteLibrary,
+              false,
+              true,
+              AppIcons.itemCategoryBook,
             ),
-          );
-        }
-      },
+      ),
+    ];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MainItemsListView<MainItem>(
+      itemsFuture: _fetchMainItems(context),
+      itemBuilder: (item, index) => item,
     );
+  }
+}
+
+IconData levelIcon(int levelNumber) {
+  switch (levelNumber) {
+    case 1:
+      return MaterialIcons.filter_1;
+    case 2:
+      return MaterialIcons.filter_2;
+    case 3:
+      return MaterialIcons.filter_3;
+    case 4:
+      return MaterialIcons.filter_4;
+    case 5:
+      return MaterialIcons.filter_5;
+    default:
+      return MaterialIcons.layers;
   }
 }

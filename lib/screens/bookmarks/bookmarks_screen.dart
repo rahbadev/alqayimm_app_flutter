@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:alqayimm_app_flutter/app_strings.dart';
+import 'package:alqayimm_app_flutter/utils/app_strings.dart';
 
 class BookmarksScreen extends StatelessWidget {
   const BookmarksScreen({super.key});

@@ -1,4 +1,4 @@
-import 'package:alqayimm_app_flutter/widget/icons/main_cv_icon.dart';
+import 'package:alqayimm_app_flutter/widget/icons/custom_icon.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
@@ -11,23 +11,24 @@ class IconLeading extends LeadingContent {
   final Color? color;
   final double? size;
 
-  IconLeading({required this.icon, this.color, this.size});
+  IconLeading({required this.icon, this.color, this.size = 28});
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       width: 70,
       height: 100,
-      child: Card(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        color: Theme.of(context).colorScheme.surfaceContainer,
-        elevation: 1,
-        child: Align(
-          // أضفنا Align هنا
-          alignment: Alignment.center,
+      child: Center(
+        child: Card(
+          clipBehavior: Clip.none,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          color: Theme.of(context).colorScheme.surfaceContainer,
+          elevation: 1,
           child: Padding(
-            padding: const EdgeInsets.all(8), // قللنا الحشو
-            child: MainItemIcon(iconData: icon, color: color, size: size),
+            padding: const EdgeInsets.all(16),
+            child: CustomIcon(icon: icon, color: color, size: size),
           ),
         ),
       ),
@@ -61,7 +62,7 @@ class ImageLeading extends LeadingContent {
         height: height,
         child: CachedNetworkImage(
           imageUrl: imageUrl!,
-          fit: BoxFit.fill,
+          fit: BoxFit.cover,
           placeholder: (_, _) => _buildPlaceholder().build(context),
           errorWidget: (_, _, _) => _buildPlaceholder().build(context),
         ),
