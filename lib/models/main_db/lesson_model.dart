@@ -2,9 +2,10 @@ import 'package:alqayimm_app_flutter/db/main/enums.dart';
 
 class LessonModel {
   final int id;
-  final String name;
-  final int mateialId;
-  final int lessonNumber;
+  final String lessonName;
+  final int materialId;
+  final int? lessonNumber;
+  final int? levelId;
   final int? authorId;
   final int? categoryId;
   final String? aboutLesson;
@@ -13,16 +14,17 @@ class LessonModel {
   final String? aboutVer;
   final String? authorName;
   final String? categoryName;
-  final DownloadStatus? downloadStatus;
+  final DownloadStatus downloadStatus;
   final bool isCompleted;
   final bool isFavorite;
 
   LessonModel({
     required this.id,
-    required this.name,
-    required this.mateialId,
-    required this.lessonNumber,
+    required this.lessonName,
+    required this.materialId,
+    this.lessonNumber,
     this.authorId,
+    this.levelId,
     this.categoryId,
     this.aboutLesson,
     this.url,
@@ -38,14 +40,15 @@ class LessonModel {
   factory LessonModel.fromMap(Map<String, dynamic> map) {
     return LessonModel(
       id: map['id'] as int,
-      name: map['name'] as String,
-      mateialId: map['material_id'] as int,
-      lessonNumber: map['lesson_number'] as int,
+      lessonName: map['lesson_name'] as String,
+      materialId: map['material_id'] as int,
+      lessonNumber: map['lesson_number'] as int?,
       authorId: map['author_id'] as int?,
+      levelId: map['level_id'] as int?,
       categoryId: map['category_id'] as int?,
       aboutLesson: map['about_lesson'] as String?,
       url: map['url'] as String?,
-      lessonVer: map['lesson_ver'] as int?,
+      lessonVer: map['ver'] as int?,
       aboutVer: map['about_ver'] as String?,
       authorName: map['author_name'] as String?,
       categoryName: map['category_name'] as String?,
@@ -54,8 +57,8 @@ class LessonModel {
 
   LessonModel copyWith({
     int? id,
-    String? name,
-    int? mateialId,
+    String? lessonName,
+    int? materialId,
     int? lessonNumber,
     int? authorId,
     int? categoryId,
@@ -71,8 +74,8 @@ class LessonModel {
   }) {
     return LessonModel(
       id: id ?? this.id,
-      name: name ?? this.name,
-      mateialId: mateialId ?? this.mateialId,
+      lessonName: lessonName ?? this.lessonName,
+      materialId: materialId ?? this.materialId,
       lessonNumber: lessonNumber ?? this.lessonNumber,
       authorId: authorId ?? this.authorId,
       categoryId: categoryId ?? this.categoryId,

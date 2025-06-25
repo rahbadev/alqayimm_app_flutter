@@ -174,7 +174,8 @@ class MainItemCard extends StatelessWidget {
     MenuButton? menuButton,
   ) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
+      mainAxisSize: MainAxisSize.max,
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [
         if (actions != null)
           ...actions.map(

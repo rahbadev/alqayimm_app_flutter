@@ -298,7 +298,7 @@ LEFT JOIN ${DbConstants.BOOKS_TABLE} b
     final sql = '''
 SELECT
   l.id,
-  l.lesson_name AS name,
+  l.lesson_name,
   l.material_id,
   l.lesson_number,
   m.author_id,
@@ -306,14 +306,10 @@ SELECT
   m.category_id,
   l.about_lesson,
   l.url,
-  l.ver AS lessonVer,
+  l.ver,
   l.about_ver,
   a.name AS author_name,
-  c.name AS category_name,
-  v.name AS level_name,
-  l.download_status,
-  l.is_completed,
-  l.is_favorite
+  c.name AS category_name
 FROM lessons_table l
 JOIN materials_table m ON l.material_id = m.id
 LEFT JOIN authors_table a ON m.author_id = a.id

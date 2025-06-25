@@ -47,8 +47,8 @@ class BookModel {
       bookVer: map['book_ver'] as int?,
       aboutVer: map['about_ver'] as String?,
       bookThumbUrl: map['book_thumb_url'] as String?,
-      authorName: map['author_name'] as String?, // جديد
-      categoryName: map['category_name'] as String?, // جديد
+      authorName: map['author_name'] as String?,
+      categoryName: map['category_name'] as String?,
     );
   }
 

@@ -19,7 +19,7 @@ class AppIcons {
 
   static const book = FontAwesome.book;
 
-  static const lessonItem = FontAwesome5Solid.music;
+  static const lessonItem = Fontisto.applemusic;
 
   static const download = Icons.download;
   static const downloading = Icons.downloading;

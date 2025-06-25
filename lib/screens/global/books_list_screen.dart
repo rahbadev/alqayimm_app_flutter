@@ -1,5 +1,8 @@
 import 'package:alqayimm_app_flutter/db/main/enums.dart';
 import 'package:alqayimm_app_flutter/db/main/repo.dart';
+import 'package:alqayimm_app_flutter/screens/global/generec_lesson_books_screen.dart';
+import 'package:alqayimm_app_flutter/screens/player/pdf_viewer_screen.dart';
+import 'package:alqayimm_app_flutter/transitions/fade_slide_route.dart';
 import 'package:alqayimm_app_flutter/utils/app_icons.dart';
 import 'package:alqayimm_app_flutter/widget/cards/main_item.dart';
 import 'package:alqayimm_app_flutter/widget/icons/main_item_icon.dart';
@@ -27,6 +30,26 @@ class BooksListScreen extends StatefulWidget {
 
   @override
   State<BooksListScreen> createState() => _BooksListScreenState();
+
+  static void navigateToScreen({
+    required BuildContext context,
+    required String title,
+    required CategorySel categorySel,
+    required BookTypeSel bookTypeSel,
+    int? authoerId,
+  }) {
+    Navigator.push(
+      context,
+      fadeSlideRoute(
+        BooksListScreen(
+          title: title,
+          categorySel: categorySel,
+          bookTypeSel: bookTypeSel,
+          authorId: authoerId,
+        ),
+      ),
+    );
+  }
 }
 
 class _BooksListScreenState extends State<BooksListScreen> {
@@ -78,9 +101,25 @@ class _BooksListScreenState extends State<BooksListScreen> {
           ),
       ],
       onItemTap: (item) {
-        Fluttertoast.showToast(msg: book.name);
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder:
+                (_) => PdfViewerScreen(
+                  filePath: book.name ?? '',
+                  url: book.bookUrl,
+                  title: book.name,
+                ),
+          ),
+        );
       },
-      actions: _buildActionButtons(book, index),
+      actions: buildActionButtons(
+        item: book,
+        onTapDownload: () => _downloadBook(index),
+        onTapShare: () {
+          Fluttertoast.showToast(msg: 'مشاركة الكتاب: ${book.name}');
+        },
+      ),
     );
   }
 
@@ -164,134 +203,5 @@ class _BooksListScreenState extends State<BooksListScreen> {
               ? 'تمت الإضافة للمفضلة'
               : 'تمت الإزالة من المفضلة',
     );
-  }
-
-  List<ActionButton> _buildActionButtons(BookModel book, int? index) {
-    List<ActionButton> actions = [];
-
-    // زر التنزيل/التحميل/الحذف مع حركة AnimatedIconSwitcher
-    actions.add(
-      ActionButton(
-        buttonWidget: AnimatedIconSwitcher(
-          icon: () {
-            switch (book.downloadStatus) {
-              case DownloadStatus.notDownloaded:
-                return Icon(AppIcons.download, key: const ValueKey('download'));
-              case DownloadStatus.downloading:
-                return SizedBox(
-                  key: const ValueKey('progress'),
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 3,
-                    backgroundColor: Colors.grey[300],
-                    valueColor: const AlwaysStoppedAnimation<Color>(
-                      Colors.teal,
-                    ),
-                  ),
-                );
-              case DownloadStatus.downloaded:
-                return Icon(AppIcons.delete, key: const ValueKey('delete'));
-              default:
-                return Icon(AppIcons.download, key: const ValueKey('download'));
-            }
-          }(),
-        ),
-        tooltip: () {
-          switch (book.downloadStatus) {
-            case DownloadStatus.notDownloaded:
-              return 'تنزيل';
-            case DownloadStatus.downloading:
-              return 'جار التنزيل';
-            case DownloadStatus.downloaded:
-              return 'حذف';
-            default:
-              return '';
-          }
-        }(),
-        onTap: (item) {
-          switch (book.downloadStatus) {
-            case DownloadStatus.notDownloaded:
-              _downloadBook(index);
-              break;
-            case DownloadStatus.downloading:
-              // لا شيء أو يمكنك إضافة إلغاء التنزيل
-              break;
-            case DownloadStatus.downloaded:
-              _deleteBook(index);
-              break;
-            default:
-              break;
-          }
-        },
-      ),
-    );
-
-    // 2- مشاركة
-    actions.add(
-      ActionButton(
-        buttonWidget: const Icon(AppIcons.share),
-        tooltip: 'مشاركة',
-        onTap: (item) {
-          Fluttertoast.showToast(msg: 'تم المشاركة');
-        },
-      ),
-    );
-
-    // 3- فتح باستخدام
-    actions.add(
-      ActionButton(
-        buttonWidget: const Icon(AppIcons.openInNew),
-        tooltip: 'فتح باستخدام',
-        onTap: (item) {
-          Fluttertoast.showToast(msg: 'فتح باستخدام...');
-        },
-      ),
-    );
-
-    // 4- تم الإكمال ولم يتم الإكمال (AnimatedIconSwitcher)
-    actions.add(
-      ActionButton(
-        buttonWidget: AnimatedIconSwitcher(
-          icon: Icon(
-            book.isCompleted
-                ? Icons.check_circle
-                : Icons.radio_button_unchecked,
-            key: ValueKey(book.isCompleted),
-            color: book.isCompleted ? Colors.green : null,
-          ),
-        ),
-        tooltip: book.isCompleted ? 'تم الإكمال' : 'لم يتم الإكمال',
-        onTap: (item) => _toggleComplete(index),
-      ),
-    );
-
-    // 5- أكشن المفضلة (AnimatedIconSwitcher)
-    actions.add(
-      ActionButton(
-        buttonWidget: AnimatedIconSwitcher(
-          icon: Icon(
-            book.isFavorite ? Icons.favorite : Icons.favorite_border,
-            key: ValueKey(book.isFavorite),
-            color: book.isFavorite ? Colors.red : null,
-          ),
-        ),
-        tooltip: book.isFavorite ? 'إزالة من المفضلة' : 'إضافة إلى المفضلة',
-        onTap: (item) => _toggleFavorite(index),
-      ),
-    );
-
-    // 6- عناصر مرتبطة
-    actions.add(
-      ActionButton(
-        buttonWidget: const Icon(Icons.link),
-        tooltip: 'عناصر مرتبطة',
-        onTap: (item) {
-          Fluttertoast.showToast(msg: 'عرض العناصر المرتبطة');
-        },
-      ),
-    );
-
-    return actions;
   }
 }
