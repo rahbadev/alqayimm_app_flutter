@@ -11,7 +11,7 @@ class DbHelper {
 
     // احصل على مسار مجلد التطبيق
     final documentsDir = await getApplicationDocumentsDirectory();
-    final dbPath = '${documentsDir.path}/app_main.db';
+    final dbPath = '${documentsDir.path}/main_database.db';
 
     // إذا لم تكن القاعدة موجودة، انسخها من assets
     if (!await File(dbPath).exists()) {

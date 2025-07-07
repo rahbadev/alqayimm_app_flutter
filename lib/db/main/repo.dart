@@ -1,10 +1,8 @@
 import 'package:alqayimm_app_flutter/db/main/db_constants.dart';
-import 'package:alqayimm_app_flutter/db/main/enums.dart';
-import 'package:alqayimm_app_flutter/main.dart';
-import 'package:alqayimm_app_flutter/models/main_db/book_model.dart';
-import 'package:alqayimm_app_flutter/models/main_db/lesson_model.dart';
-import 'package:alqayimm_app_flutter/models/main_db/material_model.dart';
-import 'package:alqayimm_app_flutter/models/main_db/type_model.dart';
+import 'package:alqayimm_app_flutter/db/enums.dart';
+import 'package:alqayimm_app_flutter/db/main/models/base_content_model.dart';
+import 'package:alqayimm_app_flutter/db/main/models/material_model.dart';
+import 'package:alqayimm_app_flutter/db/main/models/type_model.dart';
 import 'package:sqflite/sqflite.dart';
 
 class Repo {
@@ -138,7 +136,8 @@ SELECT
   m.*,
   a.${DbConstants.AUTHORS_NAME} AS author_name,
   l.${DbConstants.LEVELS_NAME} AS level_name,
-  c.${DbConstants.CATEGORIES_NAME} AS category_name
+  c.${DbConstants.CATEGORIES_NAME} AS category_name,
+  (SELECT COUNT(*) FROM lessons_table ls WHERE ls.material_id = m.id) AS lessons_count
 FROM ${DbConstants.MATERIALS_TABLE} m
 LEFT JOIN ${DbConstants.AUTHORS_TABLE} a
   ON m.${DbConstants.MATERIALS_AUTHOR_ID} = a.${DbConstants.AUTHORS_ID}
@@ -309,7 +308,8 @@ SELECT
   l.ver,
   l.about_ver,
   a.name AS author_name,
-  c.name AS category_name
+  c.name AS category_name,
+  m.name AS material_name
 FROM lessons_table l
 JOIN materials_table m ON l.material_id = m.id
 LEFT JOIN authors_table a ON m.author_id = a.id
@@ -320,7 +320,76 @@ ORDER BY $orderCol;
 ''';
 
     final rows = await _db.rawQuery(sql, wb.args);
-    logger.info('Fetched ${rows.length} lessons with query: $sql');
     return rows.map(LessonModel.fromMap).toList();
+  }
+
+  /*──────────────────── جلب مادة بالمعرف ────────────────────*/
+  Future<MaterialModel?> getMaterialById(int materialId) async {
+    final sql = '''
+SELECT 
+  m.*,
+  a.${DbConstants.AUTHORS_NAME} AS author_name,
+  l.${DbConstants.LEVELS_NAME} AS level_name,
+  c.${DbConstants.CATEGORIES_NAME} AS category_name,
+  (SELECT COUNT(*) FROM ${DbConstants.LESSONS_TABLE} WHERE material_id = m.id) AS lessons_count
+FROM ${DbConstants.MATERIALS_TABLE} m
+LEFT JOIN ${DbConstants.AUTHORS_TABLE} a 
+  ON m.${DbConstants.MATERIALS_AUTHOR_ID} = a.${DbConstants.AUTHORS_ID}
+LEFT JOIN ${DbConstants.LEVELS_TABLE} l 
+  ON m.${DbConstants.MATERIALS_LEVEL_ID} = l.${DbConstants.LEVELS_ID}
+LEFT JOIN ${DbConstants.CATEGORIES_TABLE} c 
+  ON m.${DbConstants.MATERIALS_CATEGORY_ID} = c.${DbConstants.CATEGORIES_ID}
+WHERE m.${DbConstants.MATERIALS_ID} = ?
+''';
+
+    final rows = await _db.rawQuery(sql, [materialId]);
+    if (rows.isNotEmpty) {
+      return MaterialModel.fromMap(rows.first);
+    }
+    return null;
+  }
+
+  /*──────────────────── جلب درس بالمعرف ────────────────────*/
+  Future<LessonModel?> getLessonById(int lessonId) async {
+    final sql = '''
+SELECT 
+  l.*,
+  a.name AS author_name,
+  c.name AS category_name,
+  m.name AS material_name
+FROM lessons_table l
+LEFT JOIN materials_table m ON l.material_id = m.id
+LEFT JOIN authors_table a ON m.author_id = a.id
+LEFT JOIN categories_table c ON m.category_id = c.id
+WHERE l.id = ?
+''';
+
+    final rows = await _db.rawQuery(sql, [lessonId]);
+    if (rows.isNotEmpty) {
+      return LessonModel.fromMap(rows.first);
+    }
+    return null;
+  }
+
+  /*──────────────────── جلب كتاب بالمعرف ────────────────────*/
+  Future<BookModel?> getBookById(int bookId) async {
+    final sql = '''
+SELECT 
+  b.*,
+  a.${DbConstants.AUTHORS_NAME} AS author_name,
+  c.${DbConstants.CATEGORIES_NAME} AS category_name
+FROM ${DbConstants.BOOKS_TABLE} b
+LEFT JOIN ${DbConstants.AUTHORS_TABLE} a
+  ON b.${DbConstants.BOOKS_AUTHOR_ID} = a.${DbConstants.AUTHORS_ID}
+LEFT JOIN ${DbConstants.CATEGORIES_TABLE} c
+  ON b.${DbConstants.BOOKS_CATEGORY_ID} = c.${DbConstants.CATEGORIES_ID}
+WHERE b.${DbConstants.BOOKS_ID} = ?
+''';
+
+    final rows = await _db.rawQuery(sql, [bookId]);
+    if (rows.isNotEmpty) {
+      return BookModel.fromMap(rows.first);
+    }
+    return null;
   }
 }

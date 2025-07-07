@@ -1,7 +1,7 @@
+import 'package:alqayimm_app_flutter/widget/icons.dart';
 import 'package:flutter/material.dart';
 import 'package:circle_nav_bar/circle_nav_bar.dart';
 import 'package:alqayimm_app_flutter/utils/app_strings.dart';
-import 'package:alqayimm_app_flutter/widget/icons/button_nav_bar_icon.dart';
 
 class MainBottomNavBar extends StatelessWidget {
   final int selectedIndex;
@@ -19,21 +19,21 @@ class MainBottomNavBar extends StatelessWidget {
       textDirection: TextDirection.ltr,
       child: CircleNavBar(
         activeIcons: const [
-          NavBarIcon(icon: Icons.bookmark, isActive: true),
-          NavBarIcon(icon: Icons.public, isActive: true),
-          NavBarIcon(icon: Icons.home, isActive: true),
-          NavBarIcon(icon: Icons.search, isActive: true),
-          NavBarIcon(icon: Icons.person, isActive: true),
+          NavBarIcon(icon: AppIcons.notesShrp, isActive: true),
+          NavBarIcon(icon: AppIcons.siteSharp, isActive: true),
+          NavBarIcon(icon: AppIcons.homeSharp, isActive: true),
+          NavBarIcon(icon: AppIcons.searchSharp, isActive: true),
+          NavBarIcon(icon: AppIcons.personSharp, isActive: true),
         ],
         inactiveIcons: const [
-          NavBarIcon(icon: Icons.bookmark),
-          NavBarIcon(icon: Icons.public),
-          NavBarIcon(icon: Icons.home),
-          NavBarIcon(icon: Icons.search),
-          NavBarIcon(icon: Icons.person),
+          NavBarIcon(icon: AppIcons.notesOutline),
+          NavBarIcon(icon: AppIcons.siteOutline),
+          NavBarIcon(icon: AppIcons.homeOutline),
+          NavBarIcon(icon: AppIcons.searchOutline),
+          NavBarIcon(icon: AppIcons.personOutline),
         ],
         levels: const [
-          AppStrings.navBookmarks,
+          AppStrings.navNotes,
           AppStrings.navLocation,
           AppStrings.navHome,
           AppStrings.navSearch,

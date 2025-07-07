@@ -9,6 +9,7 @@ class AppStrings {
   static const String homeTitle = 'الصفحة الرئيسية';
   static const String searchScreenTitle = 'شاشة البحث';
   static const String navBookmarks = 'العلامات';
+  static const String navNotes = 'الفوائد';
   static const String navLocation = 'الموقع';
   static const String navHome = 'الرئيسية';
   static const String navSearch = 'البحث';

@@ -1,4 +1,12 @@
 {
     "java.configuration.updateBuildConfiguration": "interactive",
-    "dart.flutterSdkPath": "C:\\flutter"
+    "dart.flutterSdkPath": "C:\\flutter",
+    "files.watcherExclude": {
+        "**/build/**": true,
+        "**/node_modules/**": true
+    },
+    "search.exclude": {
+        "**/build/**": true,
+        "**/dart_tool/**": true
+    }
 }

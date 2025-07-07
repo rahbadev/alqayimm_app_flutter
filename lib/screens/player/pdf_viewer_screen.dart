@@ -33,7 +33,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
 
   void _onPageChanged() {
     setState(() {
-      _currentPage = _pdfController.page ?? 1;
+      _currentPage = _pdfController.page;
       _totalPages = _pdfController.pagesCount ?? 1;
     });
   }
