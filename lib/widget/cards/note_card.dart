@@ -62,27 +62,6 @@ class NoteCard extends StatelessWidget {
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
               ),
-
-              const SizedBox(height: 12),
-
-              // Context info and date
-              Row(
-                children: [
-                  // Context indicator
-                  _buildGenericIndicator(context),
-
-                  const Spacer(),
-
-                  // Date
-                  Text(
-                    _formatDate(note.createdAt),
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-
               // Tags
               if (note.tags.isNotEmpty) ...[
                 const SizedBox(height: 8),
@@ -105,39 +84,17 @@ class NoteCard extends StatelessWidget {
                           .toList(),
                 ),
               ],
+              const SizedBox(height: 8),
+              // Date
+              Text(
+                _formatDate(note.createdAt),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildGenericIndicator(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.secondaryContainer,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.note,
-            size: 16,
-            color: theme.colorScheme.onSecondaryContainer,
-          ),
-          const SizedBox(width: 4),
-          Text(
-            'ملاحظة عامة',
-            style: TextStyle(
-              fontSize: 12,
-              color: theme.colorScheme.onSecondaryContainer,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
       ),
     );
   }

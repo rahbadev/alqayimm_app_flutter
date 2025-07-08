@@ -1,4 +1,3 @@
-import 'package:alqayimm_app_flutter/db/user/user_db_helper.dart';
 import 'package:alqayimm_app_flutter/main.dart';
 import 'package:alqayimm_app_flutter/screens/bookmarks/all_notes_page.dart';
 import 'package:alqayimm_app_flutter/screens/bookmarks/bookmarks_screen.dart';

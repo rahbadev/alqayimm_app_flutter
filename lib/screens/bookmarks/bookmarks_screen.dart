@@ -71,15 +71,12 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
   }
 
   Future<void> _deleteBookmark(int id) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showWarningDialog(
       context: context,
-      builder:
-          (context) => const WarningDialog(
-            title: 'حذف العلامة المرجعية',
-            subtitle: 'هل تريد حقاً حذف هذه العلامة المرجعية؟',
-            confirmText: 'نعم',
-            cancelText: 'تراجع',
-          ),
+      title: 'حذف العلامة المرجعية',
+      subtitle: 'هل تريد حقاً حذف هذه العلامة المرجعية؟',
+      confirmText: 'نعم',
+      cancelText: 'تراجع',
     );
 
     if (confirmed == true) {
@@ -89,8 +86,9 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
           _bookmarks.removeWhere((bookmark) => bookmark.id == id);
         });
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('تم حذف العلامة المرجعية')),
+          AppToasts.showSuccess(
+            context,
+            description: 'تم حذف العلامة المرجعية بنجاح',
           );
         }
       }
@@ -272,16 +270,13 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
                           direction: DismissDirection.endToStart,
                           onDismissed: (_) => _deleteBookmark(bookmark.id),
                           confirmDismiss: (_) async {
-                            return await showDialog<bool>(
+                            return await showWarningDialog(
                                   context: context,
-                                  builder:
-                                      (context) => const WarningDialog(
-                                        title: 'حذف العلامة المرجعية',
-                                        subtitle:
-                                            'هل تريد حقاً حذف هذه العلامة المرجعية؟',
-                                        confirmText: 'نعم',
-                                        cancelText: 'تراجع',
-                                      ),
+                                  title: 'حذف العلامة المرجعية',
+                                  subtitle:
+                                      'هل تريد حقاً حذف هذه العلامة المرجعية؟',
+                                  confirmText: 'نعم',
+                                  cancelText: 'تراجع',
                                 ) ??
                                 false;
                           },

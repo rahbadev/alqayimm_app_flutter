@@ -1,6 +1,7 @@
 import 'package:alqayimm_app_flutter/db/main/models/base_content_model.dart';
 import 'package:alqayimm_app_flutter/db/user/db_constants.dart';
 import 'package:alqayimm_app_flutter/widget/dialogs/custom_alert_dialog.dart';
+import 'package:alqayimm_app_flutter/widget/toasts.dart';
 import 'package:flutter/material.dart';
 import 'package:alqayimm_app_flutter/db/enums.dart';
 import 'package:alqayimm_app_flutter/db/main/repo.dart';
@@ -306,15 +307,12 @@ class _LessonsBooksScreenState extends State<LessonsBooksScreen> {
     final lesson = _items![index] as LessonModel;
     final isCurrentlyCompleted = lesson.isCompleted;
     if (isCurrentlyCompleted) {
-      final confirmed = await showDialog<bool>(
+      final confirmed = await showWarningDialog(
         context: context,
-        builder:
-            (context) => WarningDialog(
-              title: 'إلغاء الإكمال',
-              subtitle: 'هل تريد فعلاً إلغاء علامة الإكمال لهذا الدرس؟',
-              confirmText: 'نعم',
-              cancelText: 'تراجع',
-            ),
+        title: 'إلغاء الإكمال',
+        subtitle: 'هل تريد فعلاً إلغاء علامة الإكمال لهذا الدرس؟',
+        confirmText: 'نعم',
+        cancelText: 'تراجع',
       );
       if (confirmed != true) return;
     }
@@ -322,6 +320,10 @@ class _LessonsBooksScreenState extends State<LessonsBooksScreen> {
       lesson.id,
       ItemType.lesson,
     );
+    if (!status && mounted) {
+      AppToasts.showError(context, description: 'حدث خطأ أثناء تحديث الحالة');
+      return;
+    }
     setState(() {
       _items![index] = lesson.copyWith(isCompleted: !isCurrentlyCompleted);
     });

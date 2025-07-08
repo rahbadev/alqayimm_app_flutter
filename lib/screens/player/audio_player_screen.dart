@@ -5,6 +5,7 @@ import 'package:alqayimm_app_flutter/main.dart';
 import 'package:alqayimm_app_flutter/screens/player/audio_controls.dart';
 import 'package:alqayimm_app_flutter/widget/bottom_sheets.dart';
 import 'package:alqayimm_app_flutter/widget/dialogs/bookmark_dialog.dart';
+import 'package:alqayimm_app_flutter/widget/dialogs/note_dialog.dart';
 import 'package:alqayimm_app_flutter/widget/icons.dart';
 import 'package:alqayimm_app_flutter/widget/toasts.dart';
 import 'package:flutter/material.dart';
@@ -81,9 +82,11 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
         _errorMessage = 'الملف غير صالح أو غير مدعوم';
       });
       _isInitAudioRunning = false;
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('الملف غير صالح أو غير مدعوم')),
+      if (mounted) {
+        AppToasts.showError(
+          context,
+          title: 'خطأ في تحميل الملف',
+          description: 'الملف غير صالح أو غير مدعوم',
         );
       }
       return;
@@ -105,10 +108,12 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
         _errorMessage =
             'خطأ في تحميل الملف: تحقق من الاتصال أو الملف غير موجود';
       });
-      if (context.mounted) {
-        ScaffoldMessenger.of(
+      if (mounted) {
+        AppToasts.showError(
           context,
-        ).showSnackBar(SnackBar(content: Text(_errorMessage!)));
+          title: 'خطأ في تحميل الملف',
+          description: 'تحقق من الاتصال أو الملف غير موجود',
+        );
       }
     }
     _isInitAudioRunning = false;
@@ -185,22 +190,22 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
     }
   }
 
+  // add bookmark
+  Future<void> _addBookmark(LessonModel lesson) async {
+    await BookmarkDialog.showForLesson(context: context, lessonId: lesson.id);
+  }
+
   Future<void> _addNote() async {
-    final result = await BookmarkDialog.showForLesson(
+    _currentPosition = _audioPlayer.position;
+    final lesson = widget.lessons[_currentIndex];
+
+    final result = await NoteDialog.showNoteDialog(
       context: context,
-      lessonId: widget.lessons[_currentIndex].id,
-      position: _currentPosition.inMilliseconds,
-      materialName: widget.lessons[_currentIndex].materialName,
-      lessonName: widget.lessons[_currentIndex].lessonName,
+      source:
+          '${lesson.materialName} - ${lesson.lessonName} (${AudioControls.formatDuration(_currentPosition)}s) | ${lesson.authorName}',
     );
 
-    if (result == true) {
-      AppToasts.showSuccess(
-        context,
-        title: 'تمت إضافة الملاحظة بنجاح',
-        description: 'يمكنك مراجعة الملاحظات في قسم الملاحظات',
-      );
-    }
+    if (result == true) {}
   }
 
   @override
@@ -229,10 +234,6 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
         appBar: AppBar(
           title: Text(lesson.lessonName),
           actions: [
-            FavIconButton(
-              isFavorite: lesson.isFavorite,
-              onTap: () => _toggleFavorite(lesson, _currentIndex),
-            ),
             IconButton(
               icon: const Icon(Icons.speed),
               onPressed: _showSpeedSheet,
@@ -279,11 +280,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
               errorMessage: _errorMessage,
             ),
             const SizedBox(height: 16),
-            ElevatedButton.icon(
-              icon: const Icon(Icons.note_add_outlined),
-              label: const Text('إضافة ملاحظة'),
-              onPressed: _addNote,
-            ),
+            _buildPlayerActions(lesson, _currentIndex),
             const SizedBox(height: 16),
             _buildPlaylistWidget(),
           ],
@@ -314,6 +311,48 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
           );
         },
       ),
+    );
+  }
+
+  Row _buildPlayerActions(LessonModel lesson, int index) {
+    /* 
+    - إضافة أزرار
+    - المفضلة
+    - علامة مرجعية
+    - ملاحظة
+    - زر السرعة (يتغير لونه عند التعديل)
+    - زر إكمال
+    - زر تنزيل
+ */
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        IconButton.outlined(
+          icon: const Icon(Icons.note_add_outlined),
+          onPressed: _addNote,
+        ),
+        IconButton.outlined(
+          icon: const Icon(Icons.bookmark_add_outlined),
+          onPressed: () => _addBookmark(lesson),
+        ),
+        IconButton.outlined(
+          icon: FavIconButton(isFavorite: lesson.isFavorite),
+          onPressed: () => _toggleFavorite(lesson, _currentIndex),
+        ),
+        IconButton.outlined(
+          icon: const Icon(Icons.download_outlined),
+          onPressed: () {
+            // TODO: Implement download functionality
+          },
+        ),
+        IconButton.outlined(
+          icon: const Icon(Icons.check_circle_outline),
+          onPressed: () {
+            // TODO: Implement complete functionality
+          },
+        ),
+      ],
     );
   }
 }

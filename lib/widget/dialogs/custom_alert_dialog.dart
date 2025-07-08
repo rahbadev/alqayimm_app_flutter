@@ -122,23 +122,17 @@ class ActoinButton extends StatelessWidget {
   }
 }
 
-class WarningDialog extends StatelessWidget {
-  final String title;
-  final String? subtitle;
-  final String confirmText;
-  final String cancelText;
-
-  const WarningDialog({
-    super.key,
-    required this.title,
-    this.subtitle,
-    this.confirmText = 'موافق',
-    this.cancelText = 'إلغاء',
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomAlertDialog(
+/// عرض حوار تحذير
+Future<bool?> showWarningDialog({
+  required BuildContext context,
+  required String title,
+  String? subtitle,
+  String confirmText = 'موافق',
+  String cancelText = 'إلغاء',
+}) {
+  return showDialog<bool>(
+    context: context,
+    builder: (context) => CustomAlertDialog(
       icon: AppIcons.warning,
       title: title,
       color: MaterialTheme.warning(context),
@@ -146,12 +140,56 @@ class WarningDialog extends StatelessWidget {
       subtitle: subtitle,
       confirmText: confirmText,
       cancelText: cancelText,
-      onConfirm: () {
-        Navigator.of(context).pop(true);
-      },
-      onCancel: () {
-        Navigator.of(context).pop(false);
-      },
-    );
-  }
+      onConfirm: () => Navigator.of(context).pop(true),
+      onCancel: () => Navigator.of(context).pop(false),
+    ),
+  );
+}
+
+/// عرض حوار تنبيه/معلومات
+Future<bool?> showInfoDialog({
+  required BuildContext context,
+  required String title,
+  String? subtitle,
+  String confirmText = 'موافق',
+  String cancelText = 'إلغاء',
+}) {
+  return showDialog<bool>(
+    context: context,
+    builder: (context) => CustomAlertDialog(
+      icon: Icons.info_outline,
+      title: title,
+      color: MaterialTheme.info(context),
+      onColor: MaterialTheme.onInfo(context),
+      subtitle: subtitle,
+      confirmText: confirmText,
+      cancelText: cancelText,
+      onConfirm: () => Navigator.of(context).pop(true),
+      onCancel: () => Navigator.of(context).pop(false),
+    ),
+  );
+}
+
+/// عرض حوار تأكيد/نجاح
+Future<bool?> showSuccessDialog({
+  required BuildContext context,
+  required String title,
+  String? subtitle,
+  String confirmText = 'موافق',
+  String cancelText = 'إلغاء',
+}) {
+  return showDialog<bool>(
+    context: context,
+    builder: (context) => CustomAlertDialog(
+      icon: Icons.check_circle_outline,
+      title: title,
+      color: MaterialTheme.success(context),
+      onColor: MaterialTheme.onSuccess(context),
+      subtitle: subtitle,
+      confirmText: confirmText,
+      cancelText: cancelText,
+      onConfirm: () => Navigator.of(context).pop(true),
+      onCancel: () => Navigator.of(context).pop(false),
+    ),
+  );
 }

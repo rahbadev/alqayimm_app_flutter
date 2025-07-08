@@ -1,3 +1,7 @@
+import 'package:alqayimm_app_flutter/main.dart';
+import 'package:alqayimm_app_flutter/widget/text_fileds.dart';
+import 'package:alqayimm_app_flutter/widget/dialogs/action_dialog.dart';
+import 'package:alqayimm_app_flutter/widget/toasts.dart';
 import 'package:flutter/material.dart';
 import 'package:alqayimm_app_flutter/db/user/db_constants.dart';
 import 'package:alqayimm_app_flutter/db/user/models/user_bookmark_model.dart';
@@ -121,92 +125,52 @@ class _BookmarkDialogState extends State<BookmarkDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Container(
-        width: double.maxFinite,
-        constraints: const BoxConstraints(maxWidth: 500),
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  widget.isEditing ? Icons.edit : Icons.bookmark_add,
-                  color: Theme.of(context).primaryColor,
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  widget.isEditing
-                      ? 'تعديل علامة مرجعية'
-                      : 'إضافة علامة مرجعية',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            Form(
-              key: _formKey,
-              child: Column(
-                children: [
-                  TextFormField(
-                    controller: _titleController,
-                    decoration: const InputDecoration(
-                      labelText: 'العنوان / الوصف',
-                      hintText: 'أدخل عنوان أو وصف للعلامة المرجعية',
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'الرجاء إدخال عنوان للعلامة المرجعية';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _positionController,
-                    decoration: const InputDecoration(
-                      labelText: 'الموضع',
-                      hintText: 'رقم الدقيقة أو رقم الصفحة',
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.number,
-                  ),
-                  if (_hasContextInfo()) ...[
-                    const SizedBox(height: 16),
-                    _buildContextInfo(),
-                  ],
-                ],
+    return ActionDialog(
+      headerIcon:
+          widget.isEditing ? Icons.edit_outlined : Icons.bookmark_add_outlined,
+      title: widget.isEditing ? 'تعديل علامة مرجعية' : 'إضافة علامة مرجعية',
+      subtitle:
+          widget.isEditing
+              ? 'قم بتعديل بيانات العلامة المرجعية'
+              : 'أضف علامة مرجعية لحفظ موضعك المفضل',
+      confirmText: widget.isEditing ? 'تحديث' : 'حفظ',
+      confirmIcon: widget.isEditing ? Icons.edit_rounded : Icons.save_rounded,
+      onConfirm: _saveBookmark,
+      onCancel: () => Navigator.of(context).pop(false),
+      isLoading: _isLoading,
+      children: [
+        Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              CustomTextField(
+                controller: _titleController,
+                label: 'عنوان العلامة المرجعية',
+                hint: 'أدخل عنوان أو وصف للعلامة المرجعية',
+                icon: Icons.title,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'الرجاء إدخال عنوان للعلامة المرجعية';
+                  }
+                  return null;
+                },
               ),
-            ),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('إلغاء'),
-                ),
-                const SizedBox(width: 12),
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _saveBookmark,
-                  child:
-                      _isLoading
-                          ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                          : Text(widget.isEditing ? 'تحديث' : 'حفظ'),
-                ),
+              const SizedBox(height: 16),
+              CustomTextField(
+                controller: _positionController,
+                label: 'الموضع',
+                hint: 'رقم الدقيقة أو رقم الصفحة',
+                icon: Icons.location_on,
+                keyboardType: TextInputType.number,
+              ),
+              if (_hasContextInfo()) ...[
+                const SizedBox(height: 24),
+                _buildContextInfo(),
               ],
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
+      ],
     );
   }
 
@@ -216,10 +180,12 @@ class _BookmarkDialogState extends State<BookmarkDialog> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+        color: Theme.of(
+          context,
+        ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
         ),
       ),
       child: Column(
@@ -307,20 +273,29 @@ class _BookmarkDialogState extends State<BookmarkDialog> {
 
       if (mounted) {
         Navigator.of(context).pop(true);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
+        AppToasts.showSuccess(
+          context,
+          title:
               widget.isEditing
                   ? 'تم تحديث العلامة المرجعية بنجاح'
                   : 'تم إضافة العلامة المرجعية بنجاح',
-            ),
-          ),
+          description: 'يمكنك مراجعة العلامات في قسم العلامات',
         );
       }
     } catch (e) {
+      logger.e(
+        'Error saving bookmark: $e',
+        error: e,
+        stackTrace: StackTrace.current,
+      );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('حدث خطأ أثناء حفظ العلامة المرجعية')),
+        AppToasts.showError(
+          context,
+          title:
+              widget.isEditing
+                  ? 'فشل في تحديث العلامة المرجعية'
+                  : 'فشل في إضافة العلامة المرجعية',
+          description: 'يرجى المحاولة مرة أخرى',
         );
       }
     } finally {
