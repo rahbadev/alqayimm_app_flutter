@@ -1,7 +1,7 @@
 import 'package:alqayimm_app_flutter/db/enums.dart';
 import 'package:alqayimm_app_flutter/db/user/repos/user_item_status_repository.dart';
-import 'package:alqayimm_app_flutter/screens/global/lessons_books_screen.dart';
-import 'package:alqayimm_app_flutter/screens/global/material_list_screen.dart';
+import 'package:alqayimm_app_flutter/screens/items/lessons_books_screen.dart';
+import 'package:alqayimm_app_flutter/screens/items/material_list_screen.dart';
 import 'package:alqayimm_app_flutter/transitions/fade_slide_route.dart';
 import 'package:alqayimm_app_flutter/widget/cards.dart';
 import 'package:alqayimm_app_flutter/widget/icons.dart';

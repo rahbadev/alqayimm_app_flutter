@@ -1,5 +1,7 @@
 import 'package:alqayimm_app_flutter/db/main/models/base_content_model.dart';
 import 'package:alqayimm_app_flutter/db/user/db_constants.dart';
+import 'package:alqayimm_app_flutter/main.dart';
+import 'package:alqayimm_app_flutter/screens/reader/pdf_viewer_screen_final.dart';
 import 'package:alqayimm_app_flutter/widget/dialogs/custom_alert_dialog.dart';
 import 'package:alqayimm_app_flutter/widget/icons/animated_icons.dart';
 import 'package:alqayimm_app_flutter/widget/toasts.dart';
@@ -163,18 +165,12 @@ class _LessonsBooksScreenState extends State<LessonsBooksScreen> {
                       Fluttertoast.showToast(msg: 'التصنيف: $categoryName'),
             ),
         ],
-        onItemTap: (item) {
-          // Navigator.push(
-          //   context,
-          //   MaterialPageRoute(
-          //     builder:
-          //         (_) => PdfViewerScreen(
-          //           filePath: item.name ?? '',
-          //           url: item.bookUrl,
-          //           title: item.name,
-          //         ),
-          //   ),
-          // );
+        onItemTap: (_) {
+          logger.i('Tapped on  type: ${item.runtimeType}');
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => PdfViewerScreenFinal(book: item)),
+          );
         },
         actions: buildActionButtons(
           item: item,

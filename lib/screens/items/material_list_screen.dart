@@ -1,7 +1,7 @@
 import 'package:alqayimm_app_flutter/db/enums.dart';
 import 'package:alqayimm_app_flutter/db/main/repo.dart';
 import 'package:alqayimm_app_flutter/db/main/models/material_model.dart';
-import 'package:alqayimm_app_flutter/screens/global/lessons_books_screen.dart';
+import 'package:alqayimm_app_flutter/screens/items/lessons_books_screen.dart';
 import 'package:alqayimm_app_flutter/widget/icons.dart';
 import 'package:alqayimm_app_flutter/widget/main_items_list.dart';
 import 'package:flutter/material.dart';

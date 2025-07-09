@@ -1,3 +1,4 @@
+import 'package:alqayimm_app_flutter/screens/reader/pdf_viewer_screen_final.dart';
 import 'package:alqayimm_app_flutter/widget/toasts.dart';
 import 'package:flutter/material.dart';
 import 'package:alqayimm_app_flutter/db/user/models/user_bookmark_model.dart';
@@ -6,7 +7,6 @@ import 'package:alqayimm_app_flutter/db/user/db_constants.dart';
 import 'package:alqayimm_app_flutter/db/main/repo.dart';
 import 'package:alqayimm_app_flutter/db/main/db_helper.dart';
 import 'package:alqayimm_app_flutter/screens/player/audio_player_screen.dart';
-import 'package:alqayimm_app_flutter/screens/player/pdf_viewer_screen.dart';
 import 'package:alqayimm_app_flutter/widget/search_field.dart';
 
 import 'package:alqayimm_app_flutter/widget/dialogs/custom_alert_dialog.dart';
@@ -124,17 +124,11 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
         }
       } else if (bookmark.itemType == ItemType.book) {
         final book = await repo.getBookById(bookmark.itemId);
+        // TODO Fix
         if (book != null && mounted) {
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder:
-                  (_) => PdfViewerScreen(
-                    filePath: book.name,
-                    url: book.bookUrl,
-                    title: book.name,
-                  ),
-            ),
+            MaterialPageRoute(builder: (_) => PdfViewerScreenFinal(book: book)),
           );
         }
       }
