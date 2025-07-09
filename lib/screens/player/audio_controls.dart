@@ -1,4 +1,5 @@
 import 'package:alqayimm_app_flutter/widget/icons.dart';
+import 'package:alqayimm_app_flutter/widget/icons/animated_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 

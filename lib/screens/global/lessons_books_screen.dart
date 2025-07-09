@@ -1,6 +1,7 @@
 import 'package:alqayimm_app_flutter/db/main/models/base_content_model.dart';
 import 'package:alqayimm_app_flutter/db/user/db_constants.dart';
 import 'package:alqayimm_app_flutter/widget/dialogs/custom_alert_dialog.dart';
+import 'package:alqayimm_app_flutter/widget/icons/animated_icons.dart';
 import 'package:alqayimm_app_flutter/widget/toasts.dart';
 import 'package:flutter/material.dart';
 import 'package:alqayimm_app_flutter/db/enums.dart';
@@ -349,8 +350,6 @@ List<ActionButton> buildActionButtons({
           icon: () {
             final status = item.downloadStatus ?? DownloadStatus.notDownloaded;
             switch (status) {
-              case DownloadStatus.notDownloaded:
-                return Icon(AppIcons.download, key: const ValueKey('download'));
               case DownloadStatus.downloading:
                 return SizedBox(
                   key: const ValueKey('progress'),
@@ -363,6 +362,7 @@ List<ActionButton> buildActionButtons({
                 );
               case DownloadStatus.downloaded:
                 return Icon(AppIcons.delete, key: const ValueKey('delete'));
+              case DownloadStatus.notDownloaded:
               default:
                 return Icon(AppIcons.download, key: const ValueKey('download'));
             }
@@ -371,14 +371,13 @@ List<ActionButton> buildActionButtons({
         tooltip: () {
           final status = item.downloadStatus ?? DownloadStatus.notDownloaded;
           switch (status) {
-            case DownloadStatus.notDownloaded:
-              return 'تنزيل';
             case DownloadStatus.downloading:
               return 'إيقاف التنزيل';
             case DownloadStatus.downloaded:
               return 'حذف';
+            case DownloadStatus.notDownloaded:
             default:
-              return '';
+              return 'تنزيل';
           }
         }(),
         onTap: (_) => onTapDownload(),
@@ -412,16 +411,7 @@ List<ActionButton> buildActionButtons({
   if (onTapComplete != null) {
     actions.add(
       ActionButton(
-        buttonWidget: AnimatedIconSwitcher(
-          icon: Icon(
-            item.isCompleted == true
-                ? Icons.check_circle
-                : Icons.radio_button_unchecked,
-            key: ValueKey(item.isCompleted == true),
-            color: item.isCompleted == true ? Colors.green : null,
-          ),
-        ),
-        tooltip: item.isCompleted == true ? 'تم الإكمال' : 'لم يتم الإكمال',
+        buttonWidget: CompleteIconButton(isCompleted: item.isCompleted == true),
         onTap: (_) => onTapComplete(),
       ),
     );
@@ -431,12 +421,7 @@ List<ActionButton> buildActionButtons({
   if (onTapFavorite != null) {
     actions.add(
       ActionButton(
-        buttonWidget: FavIconButton(
-          isFavorite: item.isFavorite == true,
-          onTap: onTapFavorite,
-        ),
-        tooltip:
-            item.isFavorite == true ? 'إزالة من المفضلة' : 'إضافة إلى المفضلة',
+        buttonWidget: FavIconButton(isFavorite: item.isFavorite == true),
         onTap: (_) => onTapFavorite(),
       ),
     );

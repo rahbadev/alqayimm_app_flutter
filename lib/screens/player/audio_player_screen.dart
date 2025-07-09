@@ -6,7 +6,7 @@ import 'package:alqayimm_app_flutter/screens/player/audio_controls.dart';
 import 'package:alqayimm_app_flutter/widget/bottom_sheets.dart';
 import 'package:alqayimm_app_flutter/widget/dialogs/bookmark_dialog.dart';
 import 'package:alqayimm_app_flutter/widget/dialogs/note_dialog.dart';
-import 'package:alqayimm_app_flutter/widget/icons.dart';
+import 'package:alqayimm_app_flutter/widget/icons/animated_icons.dart';
 import 'package:alqayimm_app_flutter/widget/toasts.dart';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
@@ -66,8 +66,9 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
   }
 
   Future<void> _initAudio() async {
-    if (_isInitAudioRunning) return; // تجاهل إذا كان هناك تحميل جارٍ
+    if (_isInitAudioRunning) return;
     _isInitAudioRunning = true;
+
     setState(() {
       _isLoading = true;
       _hasError = false;
@@ -177,6 +178,21 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
     );
   }
 
+  /// إكمال/إلغاء إكمال الدرس
+  Future<void> _toggleComplete(LessonModel lesson, int index) async {
+    final newValue = !lesson.isCompleted;
+    bool status = await UserItemStatusRepository.setCompleted(
+      lesson.id,
+      ItemType.lesson,
+      newValue,
+    );
+    if (status) {
+      setState(() {
+        widget.lessons[index] = lesson.copyWith(isCompleted: newValue);
+      });
+    }
+  }
+
   /// إضافة/إزالة الدرس من المفضلة
   Future<void> _toggleFavorite(LessonModel lesson, int index) async {
     final success = await UserItemStatusRepository.toggleFavorite(
@@ -208,6 +224,11 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
     if (result == true) {}
   }
 
+  Future<void> _cleanupAndExit() async {
+    await _audioPlayer.stop();
+    await _audioPlayer.dispose();
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused) {
@@ -223,70 +244,70 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
-        // إذا لم يتم إغلاق الشاشة، قم بإيقاف الصوت وتحرير الموارد
-        await _audioPlayer.stop();
-        await _audioPlayer.dispose();
+        await _cleanupAndExit();
         if (context.mounted) {
-          Navigator.of(context).pop(); // أغلق الشاشة
+          Navigator.of(context).pop();
         }
       },
       child: Scaffold(
-        appBar: AppBar(
-          title: Text(lesson.lessonName),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.speed),
-              onPressed: _showSpeedSheet,
-            ),
-          ],
-        ),
-        body: Column(
-          children: [
-            const SizedBox(height: 32),
-            ClipOval(
-              child: Image.asset(
-                'assets/icons/app_icon.png',
-                width: 120,
-                height: 120,
-                fit: BoxFit.scaleDown, // أو BoxFit.fill حسب رغبتك
+        appBar: AppBar(title: Text("المشغل")),
+        body: SafeArea(
+          child: Column(
+            children: [
+              const SizedBox(height: 16),
+              ClipOval(
+                child: Image.asset(
+                  'assets/icons/app_icon.png',
+                  width: 120,
+                  height: 120,
+                  fit: BoxFit.scaleDown,
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              lesson.materialName ?? '',
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              lesson.lessonName,
-              style: const TextStyle(fontSize: 16, color: Colors.grey),
-            ),
-            const SizedBox(height: 24),
-            AudioControls(
-              currentPosition: _currentPosition,
-              duration: _duration,
-              isPlaying: _isPlaying,
-              onPlayPause: _playPause,
-              onNext: _nextLesson,
-              onPrev: _prevLesson,
-              onForward: () => _seekRelative(10),
-              onRewind: () => _seekRelative(-10),
-              onSeek:
-                  (val) => _audioPlayer.seek(Duration(seconds: val.toInt())),
-              isLoading: _isLoading,
-              hasError: _hasError,
-              onRetry: _initAudio,
-              errorMessage: _errorMessage,
-            ),
-            const SizedBox(height: 16),
-            _buildPlayerActions(lesson, _currentIndex),
-            const SizedBox(height: 16),
-            _buildPlaylistWidget(),
-          ],
+              const SizedBox(height: 24),
+              Text(
+                lesson.materialName ?? '',
+                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                lesson.lessonName,
+                style: const TextStyle(fontSize: 16, color: Colors.grey),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              AudioControls(
+                currentPosition: _currentPosition,
+                duration: _duration,
+                isPlaying: _isPlaying,
+                onPlayPause: _playPause,
+                onNext: _nextLesson,
+                onPrev: _prevLesson,
+                onForward: () => _seekRelative(10),
+                onRewind: () => _seekRelative(-10),
+                onSeek: (val) => _audioPlayer.seek(Duration(seconds: val.toInt())),
+                isLoading: _isLoading,
+                hasError: _hasError,
+                onRetry: _initAudio,
+                errorMessage: _errorMessage,
+              ),
+              const SizedBox(height: 16),
+              _buildPlayerActions(lesson, _currentIndex),
+              const SizedBox(height: 16),
+              // هذا هو الجزء المهم: Expanded حول قائمة الدروس فقط
+              Expanded(child: _buildPlaylistWidget()),
+            ],
+          ),
         ),
       ),
     );
+  }
+
+  void _navigateToLesson(int index) {
+    if (index >= 0 && index < widget.lessons.length && index != _currentIndex) {
+      setState(() => _currentIndex = index);
+      _initAudio();
+    }
   }
 
   Expanded _buildPlaylistWidget() {
@@ -304,10 +325,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
                     ? const Icon(Icons.play_arrow, color: Colors.teal)
                     : const Icon(Icons.music_note),
             selected: isCurrent,
-            onTap: () {
-              setState(() => _currentIndex = idx);
-              _initAudio();
-            },
+            onTap: () => _navigateToLesson(idx),
           );
         },
       ),
@@ -324,33 +342,44 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
     - زر إكمال
     - زر تنزيل
  */
+    Widget iconButton({
+      required IconData icon,
+      Color? color,
+      required VoidCallback onPressed,
+      String? tooltip,
+    }) {
+      return IconButton.outlined(
+        icon: Icon(icon, color: color),
+        onPressed: onPressed,
+        iconSize: 24,
+        tooltip: tooltip,
+      );
+    }
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        IconButton.outlined(
-          icon: const Icon(Icons.note_add_outlined),
+        iconButton(
+          icon: Icons.note_add_outlined,
           onPressed: _addNote,
+          tooltip: 'إضافة ملاحظة',
         ),
-        IconButton.outlined(
-          icon: const Icon(Icons.bookmark_add_outlined),
+        iconButton(
+          icon: Icons.bookmark_add_outlined,
           onPressed: () => _addBookmark(lesson),
+          tooltip: 'إضافة إشارة مرجعية',
         ),
-        IconButton.outlined(
-          icon: FavIconButton(isFavorite: lesson.isFavorite),
-          onPressed: () => _toggleFavorite(lesson, _currentIndex),
-        ),
-        IconButton.outlined(
-          icon: const Icon(Icons.download_outlined),
+        iconButton(
+          icon: Icons.download_outlined,
           onPressed: () {
             // TODO: Implement download functionality
           },
+          tooltip: 'تحميل',
         ),
-        IconButton.outlined(
-          icon: const Icon(Icons.check_circle_outline),
-          onPressed: () {
-            // TODO: Implement complete functionality
-          },
+        iconButton(
+          icon: Icons.speed,
+          color: _speed != 1.0 ? Theme.of(context).colorScheme.primary : null,
+          onPressed: _showSpeedSheet,
         ),
       ],
     );

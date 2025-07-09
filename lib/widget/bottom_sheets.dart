@@ -1,8 +1,6 @@
-// يمكنك وضع هذا في ملف جديد مثل speed_slider_sheet.dart أو في نفس الملف مؤقتاً
-
 import 'package:flutter/material.dart';
 
-class SpeedSliderSheet extends StatelessWidget {
+class SpeedSliderSheet extends StatefulWidget {
   final double speed;
   final ValueChanged<double> onSpeedChanged;
 
@@ -13,33 +11,41 @@ class SpeedSliderSheet extends StatelessWidget {
   });
 
   @override
+  State<SpeedSliderSheet> createState() => _SpeedSliderSheetState();
+}
+
+class _SpeedSliderSheetState extends State<SpeedSliderSheet> {
+  late double tempSpeed;
+
+  @override
+  void initState() {
+    super.initState();
+    tempSpeed = widget.speed;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    double tempSpeed = speed;
-    return StatefulBuilder(
-      builder: (context, setModalState) {
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 8),
-            Text(
-              "سرعة التشغيل (x ${speed.toStringAsFixed(1)})",
-              style: const TextStyle(fontSize: 18),
-            ),
-            Slider(
-              value: tempSpeed,
-              min: 0.5,
-              max: 2.0,
-              divisions: 15,
-              label: '${tempSpeed.toStringAsFixed(1)}x',
-              onChanged: (val) {
-                setModalState(() => tempSpeed = val);
-                onSpeedChanged(val);
-              },
-            ),
-            const SizedBox(height: 16),
-          ],
-        );
-      },
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const SizedBox(height: 8),
+        Text(
+          "سرعة التشغيل (x ${tempSpeed.toStringAsFixed(1)})",
+          style: const TextStyle(fontSize: 18),
+        ),
+        Slider(
+          value: tempSpeed,
+          min: 0.5,
+          max: 2.0,
+          divisions: 15,
+          label: '${tempSpeed.toStringAsFixed(1)}x',
+          onChanged: (val) {
+            setState(() => tempSpeed = val);
+            widget.onSpeedChanged(val);
+          },
+        ),
+        const SizedBox(height: 16),
+      ],
     );
   }
 }

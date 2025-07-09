@@ -1,3 +1,4 @@
+import 'package:alqayimm_app_flutter/widget/icons/animated_icons.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
@@ -113,54 +114,6 @@ class IconCard extends StatelessWidget {
       ),
     );
   }
-}
-
-/// ويدجت تبديل أيقونة مع أنيميشن Scale
-class AnimatedIconSwitcher extends StatelessWidget {
-  final Widget icon;
-  final Duration duration;
-  final Curve curve;
-  const AnimatedIconSwitcher({
-    super.key,
-    required this.icon,
-    this.duration = const Duration(milliseconds: 200),
-    this.curve = Curves.easeInOut,
-  });
-  @override
-  Widget build(BuildContext context) => AnimatedSwitcher(
-    duration: duration,
-    switchInCurve: curve,
-    switchOutCurve: curve,
-    transitionBuilder:
-        (child, animation) => ScaleTransition(scale: animation, child: child),
-    child: icon,
-  );
-}
-
-/// زر مفضلة عام مع أنيميشن
-class FavIconButton extends StatelessWidget {
-  final bool isFavorite;
-  final VoidCallback? onTap;
-  final double? size;
-  const FavIconButton({
-    super.key,
-    required this.isFavorite,
-    this.onTap,
-    this.size,
-  });
-  @override
-  Widget build(BuildContext context) => IconButton(
-    icon: AnimatedIconSwitcher(
-      icon: Icon(
-        isFavorite ? Icons.favorite : Icons.favorite_border,
-        key: ValueKey(isFavorite),
-        color: isFavorite ? Colors.red : Theme.of(context).colorScheme.primary,
-        size: size,
-      ),
-    ),
-    tooltip: isFavorite ? 'إزالة من المفضلة' : 'إضافة إلى المفضلة',
-    onPressed: onTap,
-  );
 }
 
 /// أيقونة SVG من الأصول مع دعم اللون والحجم
