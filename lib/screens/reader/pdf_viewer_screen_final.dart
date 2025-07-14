@@ -1,3 +1,6 @@
+import 'dart:io';
+import 'package:alqayimm_app_flutter/main.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:alqayimm_app_flutter/db/main/models/base_content_model.dart';
 import 'package:alqayimm_app_flutter/widget/dialogs/reader_page_selector_dialog.dart';
 import 'package:flutter/material.dart';
@@ -28,8 +31,7 @@ class _PdfViewerScreenFinalState extends State<PdfViewerScreenFinal>
   bool _isVerticalScroll = true;
   bool _isDarkMode = false;
   double _downloadProgress = 0.0;
-  Uint8List? _pdfData;
-  String? get filePath => widget.book.bookUrl;
+  String? filePath;
   String? get url => widget.book.bookUrl;
   String get title => widget.book.name;
   int? get bookId => widget.book.id;
@@ -61,12 +63,38 @@ class _PdfViewerScreenFinalState extends State<PdfViewerScreenFinal>
         throw Exception('يجب تحديد مسار الملف أو الـ URL');
       }
 
-      if (url != null && url!.isNotEmpty) {
-        // تحميل من الإنترنت
-        _pdfData = await _loadNetworkPdf(url!);
-        _document = await PdfDocument.openData(_pdfData!);
+      // filePath = FilesUtils.getBookFilePath(book);
+
+      final cacheDir = await getTemporaryDirectory();
+      final fileName = Uri.parse(url!).pathSegments.last;
+      filePath = File('${cacheDir.path}/$fileName').path;
+
+      if (url == null || url!.startsWith('http')) {
+        throw Exception('الرابط URL غير صحيح أو غير متاح');
+      }
+
+      // تحقق إذا كان الرابط URL (يبدأ بـ http)
+      if (url != null && url!.startsWith('http')) {
+        // تحقق من وجود الملف في الكاش
+        final cacheDir = await getTemporaryDirectory();
+        final fileName = Uri.parse(url!).pathSegments.last;
+        final cachedFile = File('${cacheDir.path}/$fileName');
+
+        logger.i('Cached file path: ${cachedFile.path}');
+
+        if (await cachedFile.exists()) {
+          // استخدم الملف من الكاش
+          filePath = cachedFile.path;
+          _document = await PdfDocument.openFile(cachedFile.path);
+        } else {
+          // نزّل الملف واحتفظ به في الكاش
+          final pdfData = await _loadNetworkPdf(url!);
+          await cachedFile.writeAsBytes(pdfData);
+          filePath = cachedFile.path;
+          _document = await PdfDocument.openFile(cachedFile.path);
+        }
       } else if (filePath != null && filePath!.isNotEmpty) {
-        // تحميل من الملف المحلي
+        // ملف محلي من الجهاز
         _document = await PdfDocument.openFile(filePath!);
       } else {
         throw Exception('مسار الملف أو الـ URL غير صحيح');
@@ -300,21 +328,25 @@ class _PdfViewerScreenFinalState extends State<PdfViewerScreenFinal>
       return const Center(child: CircularProgressIndicator());
     }
 
-    Widget viewer;
-    if (url != null && url!.isNotEmpty && _pdfData != null) {
-      viewer = PdfViewer.data(
-        _pdfData!,
-        sourceName: title,
-        controller: _controller,
-        params: _buildViewerParams(),
-      );
+    String filePathToUse;
+
+    // حدد المسار الصحيح للملف
+    if (filePath != null) {
+      // استخدم الملف من الكاش
+      filePathToUse = filePath!;
+    } else if (filePath != null && !filePath!.startsWith('http')) {
+      // استخدم الملف المحلي
+      filePathToUse = filePath!;
     } else {
-      viewer = PdfViewer.file(
-        filePath!,
-        controller: _controller,
-        params: _buildViewerParams(),
-      );
+      // خطأ: لا يوجد مسار صالح
+      return const Center(child: Text('خطأ: لا يمكن تحديد مسار الملف'));
     }
+
+    Widget viewer = PdfViewer.file(
+      filePathToUse,
+      controller: _controller,
+      params: _buildViewerParams(),
+    );
 
     // دمج ColorFiltered لدعم الوضع الليلي
     return ColorFiltered(

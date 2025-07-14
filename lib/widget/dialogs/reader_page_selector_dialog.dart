@@ -5,7 +5,7 @@ class PageSelectorDialog extends StatefulWidget {
   final int totalPages;
   final Function(int) onPageSelected;
 
-  const PageSelectorDialog({
+  const PageSelectorDialog({super.key, 
     required this.currentPage,
     required this.totalPages,
     required this.onPageSelected,

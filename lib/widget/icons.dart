@@ -1,4 +1,3 @@
-import 'package:alqayimm_app_flutter/widget/icons/animated_icons.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';

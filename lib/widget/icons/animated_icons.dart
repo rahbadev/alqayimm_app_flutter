@@ -1,4 +1,3 @@
-import 'package:alqayimm_app_flutter/widget/icons/animated_icons.dart';
 import 'package:flutter/material.dart';
 
 class AnimatedIconSwitcher extends StatelessWidget {

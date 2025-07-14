@@ -6,7 +6,6 @@ import 'package:alqayimm_app_flutter/screens/player/audio_controls.dart';
 import 'package:alqayimm_app_flutter/widget/bottom_sheets.dart';
 import 'package:alqayimm_app_flutter/widget/dialogs/bookmark_dialog.dart';
 import 'package:alqayimm_app_flutter/widget/dialogs/note_dialog.dart';
-import 'package:alqayimm_app_flutter/widget/icons/animated_icons.dart';
 import 'package:alqayimm_app_flutter/widget/toasts.dart';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
@@ -266,7 +265,10 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
               const SizedBox(height: 24),
               Text(
                 lesson.materialName ?? '',
-                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
@@ -285,7 +287,8 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
                 onPrev: _prevLesson,
                 onForward: () => _seekRelative(10),
                 onRewind: () => _seekRelative(-10),
-                onSeek: (val) => _audioPlayer.seek(Duration(seconds: val.toInt())),
+                onSeek:
+                    (val) => _audioPlayer.seek(Duration(seconds: val.toInt())),
                 isLoading: _isLoading,
                 hasError: _hasError,
                 onRetry: _initAudio,
