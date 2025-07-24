@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:alqayimm_app_flutter/widget/cards.dart';
+import 'package:alqayimm_app_flutter/widgets/cards/main_item_card.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 
 class MainItemsListView<T> extends StatelessWidget {

@@ -8,11 +8,11 @@ class UserItemStatusModel {
   final DateTime? completedAt;
   final int? lastPosition;
 
-  UserItemStatusModel({
+  const UserItemStatusModel({
     required this.id,
     required this.itemId,
     required this.itemType,
-    this.isFavorite = false,
+    this.isFavorite,
     this.completedAt,
     this.lastPosition,
   });
@@ -44,7 +44,27 @@ class UserItemStatusModel {
     };
   }
 
-  /// Create a copy with updated fields
+  /// خريطة تحديث تحتوي فقط على القيم غير null
+  Map<String, dynamic> toUpdateMap() {
+    final map = <String, dynamic>{
+      UserItemStatusFields.itemId: itemId,
+      UserItemStatusFields.itemType: itemType.value,
+    };
+
+    if (isFavorite != null) {
+      map[UserItemStatusFields.isFavorite] = isFavorite! ? 1 : 0;
+    }
+    if (completedAt != null) {
+      map[UserItemStatusFields.completedAt] = completedAt!.toIso8601String();
+    }
+    if (lastPosition != null) {
+      map[UserItemStatusFields.lastPosition] = lastPosition;
+    }
+
+    return map;
+  }
+
+  /// إنشاء نسخة محدثة
   UserItemStatusModel copyWith({
     int? id,
     int? itemId,
@@ -66,18 +86,10 @@ class UserItemStatusModel {
     );
   }
 
-  Map<String, dynamic> toUpdateMap() => {
-    UserItemStatusFields.itemId: itemId,
-    UserItemStatusFields.itemType: itemType.value,
-    UserItemStatusFields.isFavorite: isFavorite == true ? 1 : 0,
-    UserItemStatusFields.completedAt: completedAt?.toIso8601String(),
-    UserItemStatusFields.lastPosition: lastPosition,
-  };
-
-  /// Check if the item is completed
+  /// التحقق من حالة الإكمال
   bool get isCompleted => completedAt != null;
 
-  /// Check if the item has a saved position
+  /// التحقق من وجود موضع محفوظ
   bool get hasPosition => lastPosition != null && lastPosition! > 0;
 
   @override
@@ -99,12 +111,6 @@ class UserItemStatusModel {
   }
 
   @override
-  int get hashCode {
-    return id.hashCode ^
-        itemId.hashCode ^
-        itemType.hashCode ^
-        isFavorite.hashCode ^
-        completedAt.hashCode ^
-        lastPosition.hashCode;
-  }
+  int get hashCode =>
+      Object.hash(id, itemId, itemType, isFavorite, completedAt, lastPosition);
 }

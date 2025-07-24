@@ -1,7 +1,7 @@
 import 'package:alqayimm_app_flutter/main.dart';
-import 'package:alqayimm_app_flutter/widget/text_fileds.dart';
-import 'package:alqayimm_app_flutter/widget/dialogs/action_dialog.dart';
-import 'package:alqayimm_app_flutter/widget/toasts.dart';
+import 'package:alqayimm_app_flutter/widgets/text_fileds.dart';
+import 'package:alqayimm_app_flutter/widgets/dialogs/action_dialog.dart';
+import 'package:alqayimm_app_flutter/widgets/toasts.dart';
 import 'package:flutter/material.dart';
 import 'package:alqayimm_app_flutter/db/user/db_constants.dart';
 import 'package:alqayimm_app_flutter/db/user/models/user_bookmark_model.dart';

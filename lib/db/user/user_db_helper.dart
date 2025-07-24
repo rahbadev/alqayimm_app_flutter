@@ -8,7 +8,6 @@ class UserDbHelper {
   static Database? _userDb;
 
   static Future<Database> get userDatabase async {
-    logger.d('Accessing user database');
     if (_userDb != null) return _userDb!;
 
     final documentsDir = await getApplicationDocumentsDirectory();

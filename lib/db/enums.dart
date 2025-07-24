@@ -102,9 +102,9 @@ class BookTypeOnly extends BookTypeSel {
 }
 
 enum DownloadStatus {
-  downloading, // جاري التحميل
+  progress, // جاري التحميل
   downloaded, // تم التحميل
-  notDownloaded, // لم يتم تحميله
+  none, // لم يتم تحميله
 }
 
 /// ترتيب عرض المواد

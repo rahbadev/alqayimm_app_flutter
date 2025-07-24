@@ -1,9 +1,9 @@
 import 'package:alqayimm_app_flutter/db/enums.dart';
 import 'package:alqayimm_app_flutter/db/main/repo.dart';
-import 'package:alqayimm_app_flutter/widget/icons.dart';
+import 'package:alqayimm_app_flutter/widgets/icons.dart';
 import 'package:alqayimm_app_flutter/screens/items/types_list_screen.dart';
-import 'package:alqayimm_app_flutter/widget/cards.dart';
-import 'package:alqayimm_app_flutter/widget/main_items_list.dart';
+import 'package:alqayimm_app_flutter/widgets/cards/main_item_card.dart';
+import 'package:alqayimm_app_flutter/widgets/main_items_list.dart';
 import 'package:flutter/material.dart';
 import 'package:alqayimm_app_flutter/db/main/db_helper.dart';
 

@@ -9,7 +9,7 @@ import 'package:alqayimm_app_flutter/screens/settings/settings_screen.dart';
 import 'package:alqayimm_app_flutter/screens/user/favorites_screen.dart';
 import 'package:alqayimm_app_flutter/screens/user/user_settings_screen.dart';
 import 'package:alqayimm_app_flutter/theme/util.dart' as util;
-import 'package:alqayimm_app_flutter/widget/main_bottom_nav_bar.dart';
+import 'package:alqayimm_app_flutter/widgets/main_bottom_nav_bar.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

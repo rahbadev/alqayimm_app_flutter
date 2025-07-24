@@ -1,4 +1,4 @@
-import 'package:alqayimm_app_flutter/widget/icons/animated_icons.dart';
+import 'package:alqayimm_app_flutter/widgets/animations/animated_icon_switcher.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 
@@ -90,7 +90,10 @@ class AudioControls extends StatelessWidget {
     final double iconSize = 56;
 
     if (isLoading) {
-      return const CircularProgressIndicator(strokeWidth: 4);
+      return const CircularProgressIndicator(
+        strokeWidth: 4,
+        strokeCap: StrokeCap.round,
+      );
     }
 
     if (hasError) {

@@ -1,6 +1,6 @@
-import 'package:alqayimm_app_flutter/widget/buttons.dart';
-import 'package:alqayimm_app_flutter/widget/containers.dart';
-import 'package:alqayimm_app_flutter/widget/headers.dart';
+import 'package:alqayimm_app_flutter/widgets/buttons.dart';
+import 'package:alqayimm_app_flutter/widgets/containers.dart';
+import 'package:alqayimm_app_flutter/widgets/headers.dart';
 import 'package:flutter/material.dart';
 
 /// ويدجت حوار عام موحد للتطبيق

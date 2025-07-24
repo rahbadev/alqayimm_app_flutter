@@ -1,44 +1,74 @@
 import 'package:alqayimm_app_flutter/db/enums.dart';
 
-abstract class BaseContentModel {}
-
-class LessonModel extends BaseContentModel {
+abstract class BaseContentModel {
   final int id;
-  final String lessonName;
-  final int materialId;
-  final int? lessonNumber;
-  final int? levelId;
   final int? authorId;
-  final int? categoryId;
-  final String? aboutLesson;
-  final String? url;
-  final int? lessonVer;
-  final String? aboutVer;
   final String? authorName;
+  final int? categoryId;
   final String? categoryName;
   final DownloadStatus downloadStatus;
   final bool isCompleted;
   final bool isFavorite;
-  final String? materialName; // أضف هذا الحقل
 
-  LessonModel({
+  const BaseContentModel({
     required this.id,
+    this.authorId,
+    this.authorName,
+    this.categoryId,
+    this.categoryName,
+    this.downloadStatus = DownloadStatus.none,
+    this.isCompleted = false,
+    this.isFavorite = false,
+  });
+
+  // جعل copyWith abstract لإجبار الكلاسات الوراثة على تنفيذها
+  BaseContentModel copyWith({
+    int? id,
+    int? authorId,
+    String? authorName,
+    int? categoryId,
+    String? categoryName,
+    DownloadStatus? downloadStatus,
+    bool? isCompleted,
+    bool? isFavorite,
+  });
+
+  // دوال مساعدة مفيدة
+  bool get hasAuthor => authorName?.isNotEmpty == true;
+  bool get hasCategory => categoryName?.isNotEmpty == true;
+  bool get isDownloaded => downloadStatus == DownloadStatus.downloaded;
+  bool get isDownloading => downloadStatus == DownloadStatus.progress;
+}
+
+class LessonModel extends BaseContentModel {
+  final String lessonName;
+  final int materialId;
+  final int? lessonNumber;
+  final int? levelId;
+  final String? aboutLesson;
+  final String? url;
+  final int? lessonVer;
+  final String? aboutVer;
+  final String? materialName;
+
+  const LessonModel({
+    required super.id,
     required this.lessonName,
     required this.materialId,
     this.lessonNumber,
-    this.authorId,
+    super.authorId,
     this.levelId,
-    this.categoryId,
+    super.categoryId,
     this.aboutLesson,
     this.url,
     this.lessonVer,
     this.aboutVer,
-    this.authorName,
-    this.categoryName,
-    this.downloadStatus = DownloadStatus.notDownloaded,
-    this.isCompleted = false,
-    this.isFavorite = false,
-    this.materialName, // أضف هنا أيضاً
+    super.authorName,
+    super.categoryName,
+    super.downloadStatus,
+    super.isCompleted,
+    super.isFavorite,
+    this.materialName,
   });
 
   factory LessonModel.fromMap(Map<String, dynamic> map) {
@@ -60,12 +90,14 @@ class LessonModel extends BaseContentModel {
     );
   }
 
+  @override
   LessonModel copyWith({
     int? id,
     String? lessonName,
     int? materialId,
     int? lessonNumber,
     int? authorId,
+    int? levelId,
     int? categoryId,
     String? aboutLesson,
     String? url,
@@ -76,7 +108,7 @@ class LessonModel extends BaseContentModel {
     DownloadStatus? downloadStatus,
     bool? isCompleted,
     bool? isFavorite,
-    String? materialName, // أضف هذا الحقل هنا أيضاً
+    String? materialName,
   }) {
     return LessonModel(
       id: id ?? this.id,
@@ -84,6 +116,7 @@ class LessonModel extends BaseContentModel {
       materialId: materialId ?? this.materialId,
       lessonNumber: lessonNumber ?? this.lessonNumber,
       authorId: authorId ?? this.authorId,
+      levelId: levelId ?? this.levelId,
       categoryId: categoryId ?? this.categoryId,
       aboutLesson: aboutLesson ?? this.aboutLesson,
       url: url ?? this.url,
@@ -100,38 +133,30 @@ class LessonModel extends BaseContentModel {
 }
 
 class BookModel extends BaseContentModel {
-  final int id;
   final String name;
-  final int? authorId;
-  final int? categoryId;
   final int? bookTypeId;
   final String? aboutBook;
   final String? bookUrl;
   final int? bookVer;
   final String? aboutVer;
   final String? bookThumbUrl;
-  final String? authorName; // جديد
-  final String? categoryName; // جديد
-  final DownloadStatus? downloadStatus;
-  final bool isCompleted;
-  final bool isFavorite; // جديد
 
-  BookModel({
-    required this.id,
+  const BookModel({
+    required super.id,
     required this.name,
-    this.authorId,
-    this.categoryId,
+    super.authorId,
+    super.categoryId,
     this.bookTypeId,
     this.aboutBook,
     this.bookUrl,
     this.bookVer,
     this.aboutVer,
     this.bookThumbUrl,
-    this.authorName,
-    this.categoryName,
-    this.downloadStatus = DownloadStatus.notDownloaded,
-    this.isCompleted = false,
-    this.isFavorite = false, // جديد
+    super.authorName,
+    super.categoryName,
+    super.downloadStatus,
+    super.isCompleted,
+    super.isFavorite,
   });
 
   factory BookModel.fromMap(Map<String, dynamic> map) {
@@ -151,6 +176,7 @@ class BookModel extends BaseContentModel {
     );
   }
 
+  @override
   BookModel copyWith({
     int? id,
     String? name,
@@ -166,7 +192,7 @@ class BookModel extends BaseContentModel {
     String? categoryName,
     DownloadStatus? downloadStatus,
     bool? isCompleted,
-    bool? isFavorite, // جديد
+    bool? isFavorite,
   }) {
     return BookModel(
       id: id ?? this.id,
@@ -183,7 +209,7 @@ class BookModel extends BaseContentModel {
       categoryName: categoryName ?? this.categoryName,
       downloadStatus: downloadStatus ?? this.downloadStatus,
       isCompleted: isCompleted ?? this.isCompleted,
-      isFavorite: isFavorite ?? this.isFavorite, // جديد
+      isFavorite: isFavorite ?? this.isFavorite,
     );
   }
 }

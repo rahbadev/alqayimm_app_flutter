@@ -1,14 +1,14 @@
-import 'package:alqayimm_app_flutter/widget/cards/note_card.dart';
-import 'package:alqayimm_app_flutter/widget/dialogs/custom_alert_dialog.dart';
-import 'package:alqayimm_app_flutter/widget/dialogs/preview_note_dialog.dart';
-import 'package:alqayimm_app_flutter/widget/search_field.dart';
+import 'package:alqayimm_app_flutter/widgets/cards/note_card.dart';
+import 'package:alqayimm_app_flutter/widgets/dialogs/custom_alert_dialog.dart';
+import 'package:alqayimm_app_flutter/widgets/dialogs/preview_note_dialog.dart';
+import 'package:alqayimm_app_flutter/widgets/search_field.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../db/user/models/user_note_model.dart';
 import '../../db/user/repos/user_notes_repository.dart';
-import '../../widget/dialogs/note_dialog.dart';
-import '../../widget/toasts.dart';
+import '../../widgets/dialogs/note_dialog.dart';
+import '../../widgets/toasts.dart';
 
 /// صفحة جميع الملاحظات
 class AllNotesPage extends StatefulWidget {

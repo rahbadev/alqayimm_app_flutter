@@ -1,10 +1,10 @@
 import 'package:alqayimm_app_flutter/db/main/models/base_content_model.dart';
 import 'package:alqayimm_app_flutter/db/user/db_constants.dart';
+import 'package:alqayimm_app_flutter/db/user/models/user_item_state_model.dart';
 import 'package:alqayimm_app_flutter/main.dart';
 import 'package:alqayimm_app_flutter/screens/reader/pdf_viewer_screen_final.dart';
-import 'package:alqayimm_app_flutter/widget/dialogs/custom_alert_dialog.dart';
-import 'package:alqayimm_app_flutter/widget/icons/animated_icons.dart';
-import 'package:alqayimm_app_flutter/widget/toasts.dart';
+import 'package:alqayimm_app_flutter/widgets/buttons/items_icon_buttons.dart';
+import 'package:alqayimm_app_flutter/widgets/toasts.dart';
 import 'package:flutter/material.dart';
 import 'package:alqayimm_app_flutter/db/enums.dart';
 import 'package:alqayimm_app_flutter/db/main/repo.dart';
@@ -12,9 +12,9 @@ import 'package:alqayimm_app_flutter/db/main/db_helper.dart';
 import 'package:alqayimm_app_flutter/db/user/repos/user_item_status_repository.dart';
 import 'package:alqayimm_app_flutter/screens/player/audio_player_screen.dart';
 import 'package:alqayimm_app_flutter/transitions/fade_slide_route.dart';
-import 'package:alqayimm_app_flutter/widget/cards.dart';
-import 'package:alqayimm_app_flutter/widget/icons.dart';
-import 'package:alqayimm_app_flutter/widget/main_items_list.dart';
+import 'package:alqayimm_app_flutter/widgets/cards/main_item_card.dart';
+import 'package:alqayimm_app_flutter/widgets/icons.dart';
+import 'package:alqayimm_app_flutter/widgets/main_items_list.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 enum ScreenType { books, lessons }
@@ -75,8 +75,8 @@ class LessonsBooksScreen extends StatefulWidget {
 }
 
 class _LessonsBooksScreenState extends State<LessonsBooksScreen> {
-  late Future<List<dynamic>> _itemsFuture;
-  List<dynamic>? _items;
+  late Future<List<BaseContentModel>> _itemsFuture;
+  List<BaseContentModel>? _items;
 
   @override
   void initState() {
@@ -84,50 +84,10 @@ class _LessonsBooksScreenState extends State<LessonsBooksScreen> {
     _itemsFuture = _fetchItems();
   }
 
-  Future<List<dynamic>> _fetchItems() async {
-    final db = await DbHelper.database;
-    final repo = Repo(db);
-
-    if (widget.screenType == ScreenType.books) {
-      final books = await repo.fetchBooks(
-        authorId: widget.authorId,
-        categorySel: widget.categorySel ?? CategorySel.all(),
-        bookTypeSel: widget.bookTypeSel ?? BookTypeSel.all(),
-      );
-      _items = books;
-      return books;
-    } else {
-      final lessons = await repo.fetchLessons(
-        materialId: widget.materialId,
-        authorId: widget.authorId,
-        levelId: widget.levelId,
-        categoryId: widget.categoryId,
-      );
-      // جلب حالات المستخدم
-      final userStatuses = await UserItemStatusRepository.getItems(
-        itemType: ItemType.lesson,
-      );
-      final statusMap = {for (var s in userStatuses) s.itemId: s};
-      final mergedLessons =
-          lessons.map((lesson) {
-            final status = statusMap[lesson.id];
-            return lesson.copyWith(
-              isFavorite: status?.isFavorite ?? false,
-              isCompleted: status?.completedAt != null,
-            );
-          }).toList();
-      _items = mergedLessons;
-      return mergedLessons;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-        actions: [IconButton(icon: const Icon(Icons.search), onPressed: () {})],
-      ),
+      appBar: AppBar(title: Text(widget.title)),
       body: MainItemsListView<dynamic>(
         itemsFuture: _itemsFuture,
         itemBuilder: (item, index) => _buildMainItem(item, index),
@@ -136,303 +96,297 @@ class _LessonsBooksScreenState extends State<LessonsBooksScreen> {
     );
   }
 
-  MainItem _buildMainItem(dynamic item, int index) {
-    if (widget.screenType == ScreenType.books && item is BookModel) {
-      final authorName = item.authorName?.trim();
-      final categoryName = item.categoryName?.trim();
-      return MainItem(
+  // ==================== Data Fetching ====================
+
+  Future<List<BaseContentModel>> _fetchItems() async {
+    final db = await DbHelper.database;
+    final repo = Repo(db);
+
+    // جلب العناصر من قاعدة البيانات الرئيسية
+    final items = await _fetchMainItems(repo);
+
+    // جلب حالات المستخدم من قاعدة بيانات المستخدم
+    final userStatuses = await _fetchUserStatuses();
+
+    // دمج الحالات مع العناصر
+    return _items = _mergeItemsWithStatuses(items, userStatuses);
+  }
+
+  Future<List<BaseContentModel>> _fetchMainItems(Repo repo) async {
+    if (widget.screenType == ScreenType.books) {
+      return await repo.fetchBooks(
+        authorId: widget.authorId,
+        categorySel: widget.categorySel ?? CategorySel.all(),
+        bookTypeSel: widget.bookTypeSel ?? BookTypeSel.all(),
+      );
+    } else {
+      return await repo.fetchLessons(
+        materialId: widget.materialId,
+        authorId: widget.authorId,
+        levelId: widget.levelId,
+        categoryId: widget.categoryId,
+      );
+    }
+  }
+
+  Future<List<UserItemStatusModel>> _fetchUserStatuses() async {
+    return await UserItemStatusRepository.getItems(
+      itemType:
+          widget.screenType == ScreenType.lessons
+              ? ItemType.lesson
+              : ItemType.book,
+    );
+  }
+
+  List<BaseContentModel> _mergeItemsWithStatuses(
+    List<BaseContentModel> items,
+    List<UserItemStatusModel> userStatuses,
+  ) {
+    // بناء خريطة للحالات حسب معرف العنصر
+    final statusMap = {for (var s in userStatuses) s.itemId: s};
+
+    // دمج الحالات مع العناصر
+    return items.map((item) {
+      final status = statusMap[item.id];
+      return item.copyWith(
+        isFavorite: status?.isFavorite ?? false,
+        isCompleted: status?.isCompleted ?? false,
+      );
+    }).toList();
+  }
+
+  // ==================== UI Building ====================
+
+  MainItem _buildMainItem(BaseContentModel item, int index) {
+    final itemConfig = _getItemConfiguration(item, index);
+
+    return MainItem(
+      title: itemConfig.title,
+      leadingContent: itemConfig.leadingContent,
+      details: _buildItemDetails(item),
+      onItemTap: itemConfig.onItemTap,
+      actions: _buildItemActions(item, index),
+    );
+  }
+
+  _ItemConfiguration _getItemConfiguration(BaseContentModel item, int index) {
+    if (item is BookModel) {
+      return _ItemConfiguration(
         title: item.name,
         leadingContent: ImageLeading(
           imageUrl: item.bookThumbUrl,
           placeholderIcon: AppIcons.book,
         ),
-        details: [
-          if (authorName != null && authorName.isNotEmpty)
-            MainItemDetail(
-              text: 'المؤلف: $authorName',
-              icon: AppIcons.author,
-              iconColor: Colors.teal,
-              onTap:
-                  (item) => Fluttertoast.showToast(msg: 'المؤلف: $authorName'),
-            ),
-          if (categoryName != null && categoryName.isNotEmpty)
-            MainItemDetail(
-              text: 'التصنيف: $categoryName',
-              icon: Icons.category,
-              iconColor: Colors.blue,
-              onTap:
-                  (item) =>
-                      Fluttertoast.showToast(msg: 'التصنيف: $categoryName'),
-            ),
-        ],
-        onItemTap: (_) {
-          logger.i('Tapped on  type: ${item.runtimeType}');
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => PdfViewerScreenFinal(book: item)),
-          );
-        },
-        actions: buildActionButtons(
-          item: item,
-          onTapDownload: () => _downloadItem(index),
-          onTapShare: () {
-            Fluttertoast.showToast(msg: 'مشاركة الكتاب: ${item.name}');
-          },
-        ),
+        onItemTap: (_) => _navigateToBookViewer(item),
       );
-    } else if (widget.screenType == ScreenType.lessons && item is LessonModel) {
-      final authorName = item.authorName?.trim();
-      final categoryName = item.categoryName?.trim();
-      return MainItem(
+    } else if (item is LessonModel) {
+      return _ItemConfiguration(
         title: item.lessonName,
         leadingContent: IconLeading(icon: AppIcons.lessonItem),
-        details: [
-          if (categoryName != null && categoryName.isNotEmpty)
-            MainItemDetail(
-              text: 'التصنيف: $categoryName',
-              icon: Icons.category,
-              iconColor: Colors.blue,
-              onTap:
-                  (item) =>
-                      Fluttertoast.showToast(msg: 'التصنيف: $categoryName'),
-            ),
-          if (authorName != null && authorName.isNotEmpty)
-            MainItemDetail(
-              text: 'المعلم: $authorName',
-              icon: Icons.person,
-              iconColor: Colors.teal,
-              onTap:
-                  (item) => Fluttertoast.showToast(msg: 'المعلم: $authorName'),
-            ),
-        ],
-        onItemTap: (item) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder:
-                  (_) => AudioPlayerScreen(
-                    lessons: _items?.cast<LessonModel>() ?? [],
-                    initialIndex: index,
-                  ),
-            ),
-          );
-        },
-        actions: buildActionButtons(
-          item: item,
-          onTapDownload: () => _downloadItem(index),
-          onTapFavorite: () => _toggleFavorite(index),
-          onTapComplete: () => _toggleComplete(index),
-        ),
+        onItemTap: (_) => _navigateToAudioPlayer(index),
       );
-    } else {
-      return MainItem(
-        title: 'عنصر غير معروف',
-        leadingContent: IconLeading(icon: AppIcons.author),
+    }
+
+    throw UnimplementedError('Unsupported item type: ${item.runtimeType}');
+  }
+
+  List<MainItemDetail> _buildItemDetails(BaseContentModel item) {
+    final details = <MainItemDetail>[];
+
+    _addAuthorDetail(details, item);
+    _addCategoryDetail(details, item);
+
+    return details;
+  }
+
+  void _addAuthorDetail(List<MainItemDetail> details, BaseContentModel item) {
+    final authorName = item.authorName?.trim();
+    if (authorName != null && authorName.isNotEmpty) {
+      details.add(
+        MainItemDetail(
+          text: item is BookModel ? authorName : 'المؤلف: $authorName',
+          icon: AppIcons.author,
+          iconColor: Colors.teal,
+          onTap: (_) => _showToast('المؤلف: $authorName'),
+        ),
       );
     }
   }
 
-  /// دالة موحدة لتحميل الكتاب أو الدرس حسب النوع
-  Future<void> _downloadItem(int? index) async {
-    if (index == null ||
-        _items == null ||
-        index < 0 ||
-        index >= _items!.length) {
-      Fluttertoast.showToast(
-        msg:
-            widget.screenType == ScreenType.books
-                ? 'خطأ في تحميل الكتاب'
-                : 'خطأ في تحميل الدرس',
+  void _addCategoryDetail(List<MainItemDetail> details, BaseContentModel item) {
+    final categoryName = item.categoryName?.trim();
+    if (categoryName != null && categoryName.isNotEmpty) {
+      details.add(
+        MainItemDetail(
+          text: 'التصنيف: $categoryName',
+          icon: Icons.category,
+          iconColor: Colors.blue,
+          onTap: (_) => _showToast('التصنيف: $categoryName'),
+        ),
       );
+    }
+  }
+
+  List<Widget> _buildItemActions(BaseContentModel item, int index) {
+    return [
+      DownloadButton(
+        downloadStatus: item.downloadStatus,
+        onTap: () => _handleDownload(index),
+      ),
+      FavIconButton(
+        isFavorite: item.isFavorite,
+        onTap: () => _toggleFavorite(index),
+      ),
+      CompleteIconButton(
+        isCompleted: item.isCompleted,
+        onTap: () => _toggleComplete(index),
+      ),
+      ActionIconButton.icon(
+        icon: AppIcons.share,
+        onTap: () => _handleShare(item),
+        tooltip: 'مشاركة',
+      ),
+    ];
+  }
+
+  // ==================== Navigation ====================
+
+  void _navigateToBookViewer(BookModel book) {
+    logger.i('Tapped on book: ${book.runtimeType}');
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => PdfViewerScreenFinal(book: book)),
+    );
+  }
+
+  void _navigateToAudioPlayer(int index) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder:
+            (_) => AudioPlayerScreen(
+              lessons: _items?.cast<LessonModel>() ?? [],
+              initialIndex: index,
+            ),
+      ),
+    );
+  }
+
+  // ==================== Action Handlers ====================
+
+  Future<void> _toggleFavorite(int index) async {
+    final item = _getValidItem(index);
+    if (item == null) return;
+
+    final success = await UserItemStatusRepository.toggleFavorite(
+      item.id,
+      _getItemType(item),
+    );
+
+    if (!success) {
+      _showErrorToast('حدث خطأ أثناء تحديث المفضلة');
       return;
     }
 
-    setState(() {
-      if (widget.screenType == ScreenType.books &&
-          _items![index] is BookModel) {
-        _items![index] = (_items![index] as BookModel).copyWith(
-          downloadStatus: DownloadStatus.downloading,
-        );
-      } else if (widget.screenType == ScreenType.lessons &&
-          _items![index] is LessonModel) {
-        _items![index] = (_items![index] as LessonModel).copyWith(
-          downloadStatus: DownloadStatus.downloading,
-        );
-      }
-    });
-
-    await Future.delayed(const Duration(seconds: 4));
-
-    setState(() {
-      if (widget.screenType == ScreenType.books &&
-          _items![index] is BookModel) {
-        _items![index] = (_items![index] as BookModel).copyWith(
-          downloadStatus: DownloadStatus.downloaded,
-        );
-      } else if (widget.screenType == ScreenType.lessons &&
-          _items![index] is LessonModel) {
-        _items![index] = (_items![index] as LessonModel).copyWith(
-          downloadStatus: DownloadStatus.downloaded,
-        );
-      }
-    });
-
-    Fluttertoast.showToast(
-      msg:
-          widget.screenType == ScreenType.books
-              ? 'تم تنزيل الكتاب'
-              : 'تم تنزيل الدرس',
+    _updateItemState(
+      index,
+      (item) => item.copyWith(isFavorite: !item.isFavorite),
     );
-  }
-
-  Future<void> _toggleFavorite(int index) async {
-    if (_items == null || index < 0 || index >= _items!.length) return;
-    final lesson = _items![index] as LessonModel;
-    final newValue = !lesson.isFavorite;
-    bool status = await UserItemStatusRepository.setFavorite(
-      lesson.id,
-      ItemType.lesson,
-      newValue,
-    );
-    setState(() {
-      _items![index] = lesson.copyWith(isFavorite: newValue);
-    });
+    _logItemState(item);
   }
 
   Future<void> _toggleComplete(int index) async {
-    if (_items == null || index < 0 || index >= _items!.length) return;
-    final lesson = _items![index] as LessonModel;
-    final isCurrentlyCompleted = lesson.isCompleted;
-    if (isCurrentlyCompleted) {
-      final confirmed = await showWarningDialog(
-        context: context,
-        title: 'إلغاء الإكمال',
-        subtitle: 'هل تريد فعلاً إلغاء علامة الإكمال لهذا الدرس؟',
-        confirmText: 'نعم',
-        cancelText: 'تراجع',
-      );
-      if (confirmed != true) return;
-    }
-    bool status = await UserItemStatusRepository.toggleCompleted(
-      lesson.id,
-      ItemType.lesson,
+    final item = _getValidItem(index);
+    if (item == null) return;
+
+    final success = await UserItemStatusRepository.toggleCompleted(
+      item.id,
+      _getItemType(item),
     );
-    if (!status && mounted) {
-      AppToasts.showError(context, description: 'حدث خطأ أثناء تحديث الحالة');
+
+    if (!success) {
+      _showErrorToast('حدث خطأ أثناء تحديث الحالة');
       return;
     }
-    setState(() {
-      _items![index] = lesson.copyWith(isCompleted: !isCurrentlyCompleted);
-    });
+
+    _updateItemState(
+      index,
+      (item) => item.copyWith(isCompleted: !item.isCompleted),
+    );
+    _logItemState(item);
+  }
+
+  void _handleDownload(int index) {
+    final item = _getValidItem(index);
+    if (item == null) return;
+
+    final newStatus = _getNextDownloadStatus(item.downloadStatus);
+    _updateItemState(index, (item) => item.copyWith(downloadStatus: newStatus));
+
+    logger.i('تغيير حالة التنزيل للعنصر: ${item.id} إلى: $newStatus');
+  }
+
+  void _handleShare(BaseContentModel item) {
+    // TODO: تنفيذ وظيفة المشاركة
+  }
+
+  // ==================== Helper Methods ====================
+
+  BaseContentModel? _getValidItem(int index) {
+    if (_items == null || index < 0 || index >= _items!.length) return null;
+    return _items![index];
+  }
+
+  ItemType _getItemType(BaseContentModel item) {
+    return item is LessonModel ? ItemType.lesson : ItemType.book;
+  }
+
+  void _updateItemState(
+    int index,
+    BaseContentModel Function(BaseContentModel) updater,
+  ) {
+    if (_items != null && index >= 0 && index < _items!.length) {
+      setState(() {
+        _items![index] = updater(_items![index]);
+      });
+    }
+  }
+
+  DownloadStatus _getNextDownloadStatus(DownloadStatus current) {
+    return switch (current) {
+      DownloadStatus.none => DownloadStatus.progress,
+      DownloadStatus.progress => DownloadStatus.downloaded,
+      DownloadStatus.downloaded => DownloadStatus.none,
+    };
+  }
+
+  void _showToast(String message) {
+    Fluttertoast.showToast(msg: message);
+  }
+
+  void _showErrorToast(String message) {
+    if (mounted) {
+      AppToasts.showError(context, description: message);
+    }
+  }
+
+  void _logItemState(BaseContentModel item) {
+    logger.i(
+      'isCompleted: ${item.isCompleted}, isFavorite: ${item.isFavorite}',
+    );
   }
 }
 
-List<ActionButton> buildActionButtons({
-  required dynamic item, // BookModel أو LessonModel
-  VoidCallback? onTapDownload,
-  VoidCallback? onTapShare,
-  VoidCallback? onTapOpenWith,
-  VoidCallback? onTapComplete,
-  VoidCallback? onTapFavorite,
-  VoidCallback? onTapLinked,
-}) {
-  final List<ActionButton> actions = [];
+// ==================== Helper Classes ====================
 
-  // زر التنزيل/الحذف/إيقاف التنزيل (زر واحد فقط)
-  if (onTapDownload != null) {
-    actions.add(
-      ActionButton(
-        buttonWidget: AnimatedIconSwitcher(
-          icon: () {
-            final status = item.downloadStatus ?? DownloadStatus.notDownloaded;
-            switch (status) {
-              case DownloadStatus.downloading:
-                return SizedBox(
-                  key: const ValueKey('progress'),
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 3,
-                    backgroundColor: Colors.grey[300],
-                  ),
-                );
-              case DownloadStatus.downloaded:
-                return Icon(AppIcons.delete, key: const ValueKey('delete'));
-              case DownloadStatus.notDownloaded:
-              default:
-                return Icon(AppIcons.download, key: const ValueKey('download'));
-            }
-          }(),
-        ),
-        tooltip: () {
-          final status = item.downloadStatus ?? DownloadStatus.notDownloaded;
-          switch (status) {
-            case DownloadStatus.downloading:
-              return 'إيقاف التنزيل';
-            case DownloadStatus.downloaded:
-              return 'حذف';
-            case DownloadStatus.notDownloaded:
-            default:
-              return 'تنزيل';
-          }
-        }(),
-        onTap: (_) => onTapDownload(),
-      ),
-    );
-  }
+class _ItemConfiguration {
+  final String title;
+  final LeadingContent leadingContent;
+  final Function(MainItem) onItemTap;
 
-  // زر المشاركة
-  if (onTapShare != null) {
-    actions.add(
-      ActionButton(
-        buttonWidget: const Icon(AppIcons.share),
-        tooltip: 'مشاركة',
-        onTap: (_) => onTapShare(),
-      ),
-    );
-  }
-
-  // زر فتح باستخدام
-  if (onTapOpenWith != null) {
-    actions.add(
-      ActionButton(
-        buttonWidget: const Icon(AppIcons.openInNew),
-        tooltip: 'فتح باستخدام',
-        onTap: (_) => onTapOpenWith(),
-      ),
-    );
-  }
-
-  // زر الإكمال
-  if (onTapComplete != null) {
-    actions.add(
-      ActionButton(
-        buttonWidget: CompleteIconButton(isCompleted: item.isCompleted == true),
-        onTap: (_) => onTapComplete(),
-      ),
-    );
-  }
-
-  // زر المفضلة
-  if (onTapFavorite != null) {
-    actions.add(
-      ActionButton(
-        buttonWidget: FavIconButton(isFavorite: item.isFavorite == true),
-        onTap: (_) => onTapFavorite(),
-      ),
-    );
-  }
-
-  // زر العناصر المرتبطة
-  if (onTapLinked != null) {
-    actions.add(
-      ActionButton(
-        buttonWidget: const Icon(Icons.link),
-        tooltip: 'عناصر مرتبطة',
-        onTap: (_) => onTapLinked(),
-      ),
-    );
-  }
-
-  return actions;
+  const _ItemConfiguration({
+    required this.title,
+    required this.leadingContent,
+    required this.onItemTap,
+  });
 }

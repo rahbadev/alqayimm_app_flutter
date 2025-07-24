@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:alqayimm_app_flutter/db/user/db_constants.dart';
 import 'package:alqayimm_app_flutter/db/user/repos/user_item_status_repository.dart';
-import 'package:alqayimm_app_flutter/widget/dialogs/bookmark_dialog.dart';
-import 'package:alqayimm_app_flutter/widget/dialogs/note_dialog.dart';
+import 'package:alqayimm_app_flutter/widgets/dialogs/bookmark_dialog.dart';
+import 'package:alqayimm_app_flutter/widgets/dialogs/note_dialog.dart';
 
 class ItemsActions {
   static Future<void> addBookmark({

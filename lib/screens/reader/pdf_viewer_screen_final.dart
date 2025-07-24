@@ -2,13 +2,13 @@ import 'dart:io';
 import 'package:alqayimm_app_flutter/main.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:alqayimm_app_flutter/db/main/models/base_content_model.dart';
-import 'package:alqayimm_app_flutter/widget/dialogs/reader_page_selector_dialog.dart';
+import 'package:alqayimm_app_flutter/widgets/dialogs/reader_page_selector_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pdfrx/pdfrx.dart';
 import 'package:http/http.dart' as http;
-import 'package:alqayimm_app_flutter/widget/dialogs/bookmark_dialog.dart';
-import 'package:alqayimm_app_flutter/widget/dialogs/note_dialog.dart';
+import 'package:alqayimm_app_flutter/widgets/dialogs/bookmark_dialog.dart';
+import 'package:alqayimm_app_flutter/widgets/dialogs/note_dialog.dart';
 
 class PdfViewerScreenFinal extends StatefulWidget {
   final BookModel book;

@@ -1,9 +1,9 @@
 import 'package:alqayimm_app_flutter/db/main/db_helper.dart';
 import 'package:alqayimm_app_flutter/screens/main/home_screen.dart';
 import 'package:alqayimm_app_flutter/screens/main/website_screen.dart';
+import 'package:alqayimm_app_flutter/utils/app_strings.dart';
 import 'package:alqayimm_app_flutter/theme/theme.dart';
 import 'package:alqayimm_app_flutter/theme/util.dart';
-import 'package:alqayimm_app_flutter/utils/app_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:logger/logger.dart';
@@ -57,7 +57,6 @@ class MyApp extends StatelessWidget {
           themeMode: mode, // هنا الربط الفعلي
           debugShowCheckedModeBanner: false,
           home: const MyHomePage(title: AppStrings.appTitle),
-          // home: DownloadTestScreen(),
           locale: const Locale('ar'), // اجعل اللغة الافتراضية عربية
           supportedLocales: const [
             Locale('ar'), // يمكنك إضافة لغات أخرى إذا أردت

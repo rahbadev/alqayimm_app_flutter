@@ -1,4 +1,4 @@
-import 'package:alqayimm_app_flutter/widget/icons.dart';
+import 'package:alqayimm_app_flutter/widgets/icons.dart';
 import 'package:flutter/material.dart';
 import 'package:circle_nav_bar/circle_nav_bar.dart';
 import 'package:alqayimm_app_flutter/utils/app_strings.dart';

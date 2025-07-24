@@ -2,11 +2,11 @@ import 'package:alqayimm_app_flutter/db/enums.dart';
 import 'package:alqayimm_app_flutter/db/main/repo.dart';
 import 'package:alqayimm_app_flutter/db/main/models/material_model.dart';
 import 'package:alqayimm_app_flutter/screens/items/lessons_books_screen.dart';
-import 'package:alqayimm_app_flutter/widget/icons.dart';
-import 'package:alqayimm_app_flutter/widget/main_items_list.dart';
+import 'package:alqayimm_app_flutter/widgets/icons.dart';
+import 'package:alqayimm_app_flutter/widgets/main_items_list.dart';
 import 'package:flutter/material.dart';
 import 'package:alqayimm_app_flutter/db/main/db_helper.dart';
-import 'package:alqayimm_app_flutter/widget/cards.dart';
+import 'package:alqayimm_app_flutter/widgets/cards/main_item_card.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:alqayimm_app_flutter/db/user/repos/user_item_status_repository.dart';
 import 'package:alqayimm_app_flutter/main.dart'; // لتفعيل RouteObserver

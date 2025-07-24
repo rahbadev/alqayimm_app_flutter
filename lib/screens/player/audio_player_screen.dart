@@ -1,12 +1,10 @@
 import 'package:alqayimm_app_flutter/db/main/models/base_content_model.dart';
-import 'package:alqayimm_app_flutter/db/user/db_constants.dart';
-import 'package:alqayimm_app_flutter/db/user/repos/user_item_status_repository.dart';
 import 'package:alqayimm_app_flutter/main.dart';
 import 'package:alqayimm_app_flutter/screens/player/audio_controls.dart';
-import 'package:alqayimm_app_flutter/widget/bottom_sheets.dart';
-import 'package:alqayimm_app_flutter/widget/dialogs/bookmark_dialog.dart';
-import 'package:alqayimm_app_flutter/widget/dialogs/note_dialog.dart';
-import 'package:alqayimm_app_flutter/widget/toasts.dart';
+import 'package:alqayimm_app_flutter/widgets/bottom_sheets/speed_slider_bottom_sheet.dart';
+import 'package:alqayimm_app_flutter/widgets/dialogs/bookmark_dialog.dart';
+import 'package:alqayimm_app_flutter/widgets/dialogs/note_dialog.dart';
+import 'package:alqayimm_app_flutter/widgets/toasts.dart';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 
@@ -177,33 +175,33 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
     );
   }
 
-  /// إكمال/إلغاء إكمال الدرس
-  Future<void> _toggleComplete(LessonModel lesson, int index) async {
-    final newValue = !lesson.isCompleted;
-    bool status = await UserItemStatusRepository.setCompleted(
-      lesson.id,
-      ItemType.lesson,
-      newValue,
-    );
-    if (status) {
-      setState(() {
-        widget.lessons[index] = lesson.copyWith(isCompleted: newValue);
-      });
-    }
-  }
+  // /// إكمال/إلغاء إكمال الدرس
+  // Future<void> _toggleComplete(LessonModel lesson, int index) async {
+  //   final newValue = !lesson.isCompleted;
+  //   bool status = await UserItemStatusRepository.setCompleted(
+  //     lesson.id,
+  //     ItemType.lesson,
+  //     newValue,
+  //   );
+  //   if (status) {
+  //     setState(() {
+  //       widget.lessons[index] = lesson.copyWith(isCompleted: newValue);
+  //     });
+  //   }
+  // }
 
-  /// إضافة/إزالة الدرس من المفضلة
-  Future<void> _toggleFavorite(LessonModel lesson, int index) async {
-    final success = await UserItemStatusRepository.toggleFavorite(
-      lesson.id,
-      ItemType.lesson,
-    );
-    if (success) {
-      setState(() {
-        widget.lessons[index] = lesson.copyWith(isFavorite: !lesson.isFavorite);
-      });
-    }
-  }
+  // /// إضافة/إزالة الدرس من المفضلة
+  // Future<void> _toggleFavorite(LessonModel lesson, int index) async {
+  //   final success = await UserItemStatusRepository.toggleFavorite(
+  //     lesson.id,
+  //     ItemType.lesson,
+  //   );
+  //   if (success) {
+  //     setState(() {
+  //       widget.lessons[index] = lesson.copyWith(isFavorite: !lesson.isFavorite);
+  //     });
+  //   }
+  // }
 
   // add bookmark
   Future<void> _addBookmark(LessonModel lesson) async {
@@ -336,15 +334,6 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
   }
 
   Row _buildPlayerActions(LessonModel lesson, int index) {
-    /* 
-    - إضافة أزرار
-    - المفضلة
-    - علامة مرجعية
-    - ملاحظة
-    - زر السرعة (يتغير لونه عند التعديل)
-    - زر إكمال
-    - زر تنزيل
- */
     Widget iconButton({
       required IconData icon,
       Color? color,

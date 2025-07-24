@@ -1,5 +1,5 @@
 import 'package:alqayimm_app_flutter/theme/theme.dart';
-import 'package:alqayimm_app_flutter/widget/icons.dart';
+import 'package:alqayimm_app_flutter/widgets/icons.dart';
 import 'package:flutter/material.dart';
 
 class CustomAlertDialog extends StatelessWidget {
@@ -132,17 +132,18 @@ Future<bool?> showWarningDialog({
 }) {
   return showDialog<bool>(
     context: context,
-    builder: (context) => CustomAlertDialog(
-      icon: AppIcons.warning,
-      title: title,
-      color: MaterialTheme.warning(context),
-      onColor: MaterialTheme.onWarning(context),
-      subtitle: subtitle,
-      confirmText: confirmText,
-      cancelText: cancelText,
-      onConfirm: () => Navigator.of(context).pop(true),
-      onCancel: () => Navigator.of(context).pop(false),
-    ),
+    builder:
+        (context) => CustomAlertDialog(
+          icon: AppIcons.warning,
+          title: title,
+          color: MaterialTheme.warning(context),
+          onColor: MaterialTheme.onWarning(context),
+          subtitle: subtitle,
+          confirmText: confirmText,
+          cancelText: cancelText,
+          onConfirm: () => Navigator.of(context).pop(true),
+          onCancel: () => Navigator.of(context).pop(false),
+        ),
   );
 }
 
@@ -156,17 +157,18 @@ Future<bool?> showInfoDialog({
 }) {
   return showDialog<bool>(
     context: context,
-    builder: (context) => CustomAlertDialog(
-      icon: Icons.info_outline,
-      title: title,
-      color: MaterialTheme.info(context),
-      onColor: MaterialTheme.onInfo(context),
-      subtitle: subtitle,
-      confirmText: confirmText,
-      cancelText: cancelText,
-      onConfirm: () => Navigator.of(context).pop(true),
-      onCancel: () => Navigator.of(context).pop(false),
-    ),
+    builder:
+        (context) => CustomAlertDialog(
+          icon: Icons.info_outline,
+          title: title,
+          color: MaterialTheme.info(context),
+          onColor: MaterialTheme.onInfo(context),
+          subtitle: subtitle,
+          confirmText: confirmText,
+          cancelText: cancelText,
+          onConfirm: () => Navigator.of(context).pop(true),
+          onCancel: () => Navigator.of(context).pop(false),
+        ),
   );
 }
 
@@ -180,16 +182,17 @@ Future<bool?> showSuccessDialog({
 }) {
   return showDialog<bool>(
     context: context,
-    builder: (context) => CustomAlertDialog(
-      icon: Icons.check_circle_outline,
-      title: title,
-      color: MaterialTheme.success(context),
-      onColor: MaterialTheme.onSuccess(context),
-      subtitle: subtitle,
-      confirmText: confirmText,
-      cancelText: cancelText,
-      onConfirm: () => Navigator.of(context).pop(true),
-      onCancel: () => Navigator.of(context).pop(false),
-    ),
+    builder:
+        (context) => CustomAlertDialog(
+          icon: Icons.check_circle_outline,
+          title: title,
+          color: MaterialTheme.success(context),
+          onColor: MaterialTheme.onSuccess(context),
+          subtitle: subtitle,
+          confirmText: confirmText,
+          cancelText: cancelText,
+          onConfirm: () => Navigator.of(context).pop(true),
+          onCancel: () => Navigator.of(context).pop(false),
+        ),
   );
 }
