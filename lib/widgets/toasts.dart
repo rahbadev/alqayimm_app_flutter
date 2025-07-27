@@ -115,12 +115,12 @@ class AppToasts {
   }
 
   static void showInfo(
-    BuildContext context,
-    String title,
-    String description,
+    BuildContext context, {
+    String title = "معلومات",
+    String? description,
     Duration? duration,
     VoidCallback? onUndo,
-  ) {
+  }) {
     baseToast(
       context,
       foregroundColor: MaterialTheme.onInfo(context),

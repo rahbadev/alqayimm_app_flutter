@@ -4,6 +4,7 @@ import 'package:alqayimm_app_flutter/screens/items/lessons_books_screen.dart';
 import 'package:alqayimm_app_flutter/screens/items/material_list_screen.dart';
 import 'package:alqayimm_app_flutter/transitions/fade_slide_route.dart';
 import 'package:alqayimm_app_flutter/widgets/cards/main_item_card.dart';
+import 'package:alqayimm_app_flutter/widgets/download/global_download_indicator.dart';
 import 'package:alqayimm_app_flutter/widgets/icons.dart';
 import 'package:alqayimm_app_flutter/widgets/main_items_list.dart';
 import 'package:flutter/material.dart';
@@ -37,8 +38,7 @@ class TypesListScreen extends StatefulWidget {
     bool? isBooks,
     IconData icon,
   ) {
-    Navigator.push(
-      context,
+    Navigator.of(context, rootNavigator: true).push(
       fadeSlideRoute(
         TypesListScreen(
           title: title,
@@ -194,11 +194,14 @@ class _TypesListScreenState extends State<TypesListScreen> with RouteAware {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(widget.title)),
-      body: MainItemsListView<MainItem>(
-        itemsFuture: widget.items.isEmpty ? Future.value([]) : _mainItemsFuture,
-        itemBuilder: (item, index) => item,
+    return GlobalDownloadIndicator(
+      child: Scaffold(
+        appBar: AppBar(title: Text(widget.title)),
+        body: MainItemsListView<MainItem>(
+          itemsFuture:
+              widget.items.isEmpty ? Future.value([]) : _mainItemsFuture,
+          itemBuilder: (item, index) => item,
+        ),
       ),
     );
   }

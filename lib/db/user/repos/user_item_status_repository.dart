@@ -20,7 +20,9 @@ class UserItemStatusRepository {
       final existing = await _getExistingItem(db, model.itemId, model.itemType);
 
       if (existing == null) {
-        await db.insert(_table, model.toMap());
+        final map = model.toMap();
+        map.remove(UserItemStatusFields.id);
+        await db.insert(_table, map);
       } else {
         final updateMap = model.toUpdateMap();
         // إزالة المفاتيح الأساسية من الخريطة

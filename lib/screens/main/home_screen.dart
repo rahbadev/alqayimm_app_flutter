@@ -1,6 +1,8 @@
 import 'package:alqayimm_app_flutter/main.dart';
+import 'package:alqayimm_app_flutter/downloader/download_provider.dart';
 import 'package:alqayimm_app_flutter/screens/bookmarks/all_notes_page.dart';
 import 'package:alqayimm_app_flutter/screens/bookmarks/bookmarks_screen.dart';
+import 'package:alqayimm_app_flutter/screens/downloads/downloads_screen.dart';
 import 'package:alqayimm_app_flutter/screens/main/institute_screen.dart';
 import 'package:alqayimm_app_flutter/screens/main/search_screen.dart';
 import 'package:alqayimm_app_flutter/screens/main/shik_screen.dart';
@@ -14,6 +16,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:provider/provider.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
@@ -163,6 +166,52 @@ class _MyHomePageState extends State<MyHomePage> {
             style: const TextStyle(fontWeight: FontWeight.bold),
           ),
           actions: [
+            // زر التنزيلات مع badge
+            Consumer<DownloadProvider>(
+              builder: (context, downloadProvider, child) {
+                final activeDownloads = downloadProvider.runningDownloadsCount;
+                return Stack(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.download),
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const DownloadsScreen(),
+                          ),
+                        );
+                      },
+                      tooltip: 'التنزيلات',
+                    ),
+                    if (activeDownloads > 0)
+                      Positioned(
+                        right: 8,
+                        top: 8,
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          constraints: const BoxConstraints(
+                            minWidth: 16,
+                            minHeight: 16,
+                          ),
+                          child: Text(
+                            '$activeDownloads',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
             if (_selectedIndex == 1)
               IconButton(
                 icon: const Icon(Icons.refresh),

@@ -1,13 +1,17 @@
 import 'package:alqayimm_app_flutter/db/main/db_helper.dart';
+import 'package:alqayimm_app_flutter/downloader/download_provider.dart';
 import 'package:alqayimm_app_flutter/screens/main/home_screen.dart';
 import 'package:alqayimm_app_flutter/screens/main/website_screen.dart';
+import 'package:alqayimm_app_flutter/tests/test_downloader_screen.dart';
 import 'package:alqayimm_app_flutter/utils/app_strings.dart';
 import 'package:alqayimm_app_flutter/theme/theme.dart';
 import 'package:alqayimm_app_flutter/theme/util.dart';
+import 'package:alqayimm_app_flutter/utils/preferences_utils.dart';
+import 'package:alqayimm_app_flutter/widgets/download/global_download_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:logger/logger.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
 
 final themeModeNotifier = ValueNotifier<ThemeMode>(ThemeMode.system);
 var logger = Logger(
@@ -20,22 +24,31 @@ var logger = Logger(
     dateTimeFormat: DateTimeFormat.onlyTime,
   ),
 );
+
 final GlobalKey<SiteScreenState> siteScreenKey = GlobalKey<SiteScreenState>();
+
 final RouteObserver<ModalRoute<void>> routeObserver =
     RouteObserver<ModalRoute<void>>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await DbHelper.database; // فتح القاعدة هنا
+  await DbHelper.database;
+
+  final downloadProvider = DownloadProvider();
+  await downloadProvider.initialize();
+
+  await PreferencesUtils.init();
+
   // استرجاع اختيار المستخدم
-  final prefs = await SharedPreferences.getInstance();
-  final savedMode = prefs.getInt('themeMode');
-  if (savedMode != null) {
-    themeModeNotifier.value = ThemeMode.values[savedMode];
-  }
-  runApp(const MyApp());
-  logger.i('تطبيق الدين القيم بدأ التشغيل');
+  final savedMode = PreferencesUtils.getAppThemeMode();
+  themeModeNotifier.value = ThemeMode.values[savedMode];
+  runApp(
+    MultiProvider(
+      providers: [ChangeNotifierProvider.value(value: downloadProvider)],
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -54,10 +67,13 @@ class MyApp extends StatelessWidget {
           theme: theme.light(),
           darkTheme: theme.dark(),
           navigatorObservers: [routeObserver],
-          themeMode: mode, // هنا الربط الفعلي
+          themeMode: mode,
           debugShowCheckedModeBanner: false,
-          home: const MyHomePage(title: AppStrings.appTitle),
-          locale: const Locale('ar'), // اجعل اللغة الافتراضية عربية
+          home: GlobalDownloadIndicator(
+            child: const MyHomePage(title: AppStrings.appTitle),
+            // child: const TestDownloaderScreen(),
+          ),
+          locale: const Locale('ar'),
           supportedLocales: const [
             Locale('ar'), // يمكنك إضافة لغات أخرى إذا أردت
           ],

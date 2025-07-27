@@ -8,6 +8,8 @@ class CustomAlertDialog extends StatelessWidget {
   final Color? color;
   final Color? onColor;
   final String? subtitle;
+  final Widget? additionalContent;
+
   final String confirmText;
   final String cancelText;
   final VoidCallback? onConfirm;
@@ -20,6 +22,7 @@ class CustomAlertDialog extends StatelessWidget {
     this.color,
     this.onColor,
     this.subtitle,
+    this.additionalContent,
     this.confirmText = 'موافق',
     this.cancelText = 'إلغاء',
     this.onConfirm,
@@ -48,16 +51,23 @@ class CustomAlertDialog extends StatelessWidget {
         left: 16,
         right: 16,
       ),
-      content:
-          subtitle != null
-              ? Text(
-                subtitle!,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface.withAlpha(175),
-                ),
-              )
-              : null,
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (subtitle != null)
+            Text(
+              subtitle!,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface.withAlpha(175),
+              ),
+            ),
+          if (additionalContent != null) ...[
+            const SizedBox(height: 8),
+            additionalContent!,
+          ],
+        ],
+      ),
       actionsAlignment: MainAxisAlignment.spaceAround,
       actions: [
         ActoinButton(
@@ -127,6 +137,7 @@ Future<bool?> showWarningDialog({
   required BuildContext context,
   required String title,
   String? subtitle,
+  Widget? additionalContent,
   String confirmText = 'موافق',
   String cancelText = 'إلغاء',
 }) {
@@ -139,6 +150,7 @@ Future<bool?> showWarningDialog({
           color: MaterialTheme.warning(context),
           onColor: MaterialTheme.onWarning(context),
           subtitle: subtitle,
+          additionalContent: additionalContent,
           confirmText: confirmText,
           cancelText: cancelText,
           onConfirm: () => Navigator.of(context).pop(true),

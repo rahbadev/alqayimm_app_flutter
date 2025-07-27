@@ -1,9 +1,13 @@
 import 'package:alqayimm_app_flutter/db/main/models/base_content_model.dart';
 import 'package:alqayimm_app_flutter/db/user/db_constants.dart';
 import 'package:alqayimm_app_flutter/db/user/models/user_item_state_model.dart';
+import 'package:alqayimm_app_flutter/downloader/download_task_info.dart';
 import 'package:alqayimm_app_flutter/main.dart';
+import 'package:alqayimm_app_flutter/downloader/download_provider.dart';
 import 'package:alqayimm_app_flutter/screens/reader/pdf_viewer_screen_final.dart';
 import 'package:alqayimm_app_flutter/widgets/buttons/items_icon_buttons.dart';
+import 'package:alqayimm_app_flutter/widgets/dialogs/custom_alert_dialog.dart';
+import 'package:alqayimm_app_flutter/widgets/download/global_download_indicator.dart';
 import 'package:alqayimm_app_flutter/widgets/toasts.dart';
 import 'package:flutter/material.dart';
 import 'package:alqayimm_app_flutter/db/enums.dart';
@@ -15,7 +19,7 @@ import 'package:alqayimm_app_flutter/transitions/fade_slide_route.dart';
 import 'package:alqayimm_app_flutter/widgets/cards/main_item_card.dart';
 import 'package:alqayimm_app_flutter/widgets/icons.dart';
 import 'package:alqayimm_app_flutter/widgets/main_items_list.dart';
-import 'package:fluttertoast/fluttertoast.dart';
+import 'package:provider/provider.dart';
 
 enum ScreenType { books, lessons }
 
@@ -56,8 +60,7 @@ class LessonsBooksScreen extends StatefulWidget {
     CategorySel? categorySel,
     BookTypeSel? bookTypeSel,
   }) {
-    Navigator.push(
-      context,
+    Navigator.of(context, rootNavigator: true).push(
       fadeSlideRoute(
         LessonsBooksScreen(
           screenType: screenType,
@@ -86,12 +89,14 @@ class _LessonsBooksScreenState extends State<LessonsBooksScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(widget.title)),
-      body: MainItemsListView<dynamic>(
-        itemsFuture: _itemsFuture,
-        itemBuilder: (item, index) => _buildMainItem(item, index),
-        titleFontSize: 20,
+    return GlobalDownloadIndicator(
+      child: Scaffold(
+        appBar: AppBar(title: Text(widget.title)),
+        body: MainItemsListView<dynamic>(
+          itemsFuture: _itemsFuture,
+          itemBuilder: (item, index) => _buildMainItem(item, index),
+          titleFontSize: 20,
+        ),
       ),
     );
   }
@@ -109,7 +114,19 @@ class _LessonsBooksScreenState extends State<LessonsBooksScreen> {
     final userStatuses = await _fetchUserStatuses();
 
     // دمج الحالات مع العناصر
-    return _items = _mergeItemsWithStatuses(items, userStatuses);
+    final mergedItems = _mergeItemsWithStatuses(items, userStatuses);
+
+    // تحديث حالة التنزيل لكل عنصر عند تحميل الشاشة
+    try {
+      if (mounted) {
+        final downloadProvider = context.read<DownloadProvider>();
+        await downloadProvider.refreshAllDownloadStatuses(mergedItems);
+      }
+    } catch (e) {
+      logger.e('Error refreshing download statuses: $e');
+    }
+
+    return _items = mergedItems;
   }
 
   Future<List<BaseContentModel>> _fetchMainItems(Repo repo) async {
@@ -207,7 +224,7 @@ class _LessonsBooksScreenState extends State<LessonsBooksScreen> {
           text: item is BookModel ? authorName : 'المؤلف: $authorName',
           icon: AppIcons.author,
           iconColor: Colors.teal,
-          onTap: (_) => _showToast('المؤلف: $authorName'),
+          onTap: (_) => {},
         ),
       );
     }
@@ -221,7 +238,7 @@ class _LessonsBooksScreenState extends State<LessonsBooksScreen> {
           text: 'التصنيف: $categoryName',
           icon: Icons.category,
           iconColor: Colors.blue,
-          onTap: (_) => _showToast('التصنيف: $categoryName'),
+          onTap: (_) => {},
         ),
       );
     }
@@ -229,9 +246,16 @@ class _LessonsBooksScreenState extends State<LessonsBooksScreen> {
 
   List<Widget> _buildItemActions(BaseContentModel item, int index) {
     return [
-      DownloadButton(
-        downloadStatus: item.downloadStatus,
-        onTap: () => _handleDownload(index),
+      Consumer<DownloadProvider>(
+        builder: (context, downloadProvider, child) {
+          final downloadStatus = downloadProvider.getDownloadStatus(item);
+          final info = downloadProvider.getDownloadInfo(item);
+          return DownloadButton(
+            downloadStatus: downloadStatus,
+            progress: info?.progress ?? 0.0,
+            onTap: () => _handleDownload(item, downloadProvider),
+          );
+        },
       ),
       FavIconButton(
         isFavorite: item.isFavorite,
@@ -292,7 +316,6 @@ class _LessonsBooksScreenState extends State<LessonsBooksScreen> {
       index,
       (item) => item.copyWith(isFavorite: !item.isFavorite),
     );
-    _logItemState(item);
   }
 
   Future<void> _toggleComplete(int index) async {
@@ -313,17 +336,72 @@ class _LessonsBooksScreenState extends State<LessonsBooksScreen> {
       index,
       (item) => item.copyWith(isCompleted: !item.isCompleted),
     );
-    _logItemState(item);
   }
 
-  void _handleDownload(int index) {
-    final item = _getValidItem(index);
-    if (item == null) return;
+  Future<void> _handleDownload(
+    BaseContentModel item,
+    DownloadProvider downloadProvider,
+  ) async {
+    final currentStatus = downloadProvider.getDownloadStatus(item);
 
-    final newStatus = _getNextDownloadStatus(item.downloadStatus);
-    _updateItemState(index, (item) => item.copyWith(downloadStatus: newStatus));
+    switch (currentStatus) {
+      case DownloadStatus.none:
+        // بدء التنزيل
+        await downloadProvider.startDownload(context, item);
+        break;
 
-    logger.i('تغيير حالة التنزيل للعنصر: ${item.id} إلى: $newStatus');
+      case DownloadStatus.progress:
+        // التحقق من وجود التنزيل في القائمة النشطة
+        try {
+          final downloadInfo = downloadProvider.getDownloadInfo(item);
+          if (downloadInfo != null) {
+            _showDownloadOptionsDialog(downloadInfo, downloadProvider);
+          } else {
+            await downloadProvider.startDownload(context, item);
+          }
+        } catch (e) {
+          logger.e('Error fetching download info: $e');
+          // لا يوجد تنزيل نشط - محاولة بدء تنزيل جديد
+          if (mounted) {
+            await downloadProvider.startDownload(context, item);
+          }
+        }
+        break;
+      case DownloadStatus.downloaded:
+        // عرض خيارات الملف المنزل
+        _showDownloadedFileOptions(item, downloadProvider);
+        break;
+    }
+  }
+
+  void _showDownloadOptionsDialog(
+    DownloadTaskInfo downloadInfo,
+    DownloadProvider downloadProvider,
+  ) async {
+    final confirmed = await showInfoDialog(
+      context: context,
+      title: 'خيارات التنزيل',
+      subtitle: 'يتم تنزيل الملف هل تريد إيقاف التنزيل ؟',
+      confirmText: "إيقاف",
+    );
+    if (confirmed == true && mounted) {
+      await downloadProvider.pauseDownload(downloadInfo.taskId);
+    }
+  }
+
+  void _showDownloadedFileOptions(
+    BaseContentModel item,
+    DownloadProvider downloadProvider,
+  ) async {
+    final confirmed = await showInfoDialog(
+      context: context,
+      title: 'خيارات الملف',
+      subtitle: 'تم تنزيل الملف مسبقاً، هل تريد حذف الملف ؟',
+      confirmText: "حذف",
+    );
+    if (confirmed == true && mounted) {
+      await downloadProvider.deleteDownloadedFile(context, item);
+    }
   }
 
   void _handleShare(BaseContentModel item) {
@@ -352,28 +430,10 @@ class _LessonsBooksScreenState extends State<LessonsBooksScreen> {
     }
   }
 
-  DownloadStatus _getNextDownloadStatus(DownloadStatus current) {
-    return switch (current) {
-      DownloadStatus.none => DownloadStatus.progress,
-      DownloadStatus.progress => DownloadStatus.downloaded,
-      DownloadStatus.downloaded => DownloadStatus.none,
-    };
-  }
-
-  void _showToast(String message) {
-    Fluttertoast.showToast(msg: message);
-  }
-
   void _showErrorToast(String message) {
     if (mounted) {
       AppToasts.showError(context, description: message);
     }
-  }
-
-  void _logItemState(BaseContentModel item) {
-    logger.i(
-      'isCompleted: ${item.isCompleted}, isFavorite: ${item.isFavorite}',
-    );
   }
 }
 

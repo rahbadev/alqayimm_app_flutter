@@ -18,7 +18,6 @@ class UserDbHelper {
       version: UserDatabaseConstants.dbVersion,
       onCreate: _createDb,
     );
-    logger.i('User database opened at $dbPath');
     return _userDb!;
   }
 
