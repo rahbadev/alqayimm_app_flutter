@@ -5,7 +5,7 @@ class UserItemStatusModel {
   final int itemId;
   final ItemType itemType;
   final bool? isFavorite;
-  final DateTime? completedAt;
+  final String? _completedAt;
   final int? lastPosition;
 
   const UserItemStatusModel({
@@ -13,9 +13,9 @@ class UserItemStatusModel {
     required this.itemId,
     required this.itemType,
     this.isFavorite,
-    this.completedAt,
+    String? completedAt,
     this.lastPosition,
-  });
+  }) : _completedAt = completedAt;
 
   factory UserItemStatusModel.fromMap(Map<String, dynamic> map) {
     return UserItemStatusModel(
@@ -25,10 +25,7 @@ class UserItemStatusModel {
         map[UserItemStatusFields.itemType] as String,
       ),
       isFavorite: map[UserItemStatusFields.isFavorite] == 1,
-      completedAt:
-          map[UserItemStatusFields.completedAt] != null
-              ? DateTime.parse(map[UserItemStatusFields.completedAt] as String)
-              : null,
+      completedAt: map[UserItemStatusFields.completedAt] as String? ?? '',
       lastPosition: map[UserItemStatusFields.lastPosition] as int?,
     );
   }
@@ -39,55 +36,23 @@ class UserItemStatusModel {
       UserItemStatusFields.itemId: itemId,
       UserItemStatusFields.itemType: itemType.value,
       UserItemStatusFields.isFavorite: isFavorite == true ? 1 : 0,
-      UserItemStatusFields.completedAt: completedAt?.toIso8601String(),
+      UserItemStatusFields.completedAt: _completedAt ?? '',
       UserItemStatusFields.lastPosition: lastPosition,
     };
   }
 
-  /// خريطة تحديث تحتوي فقط على القيم غير null
-  Map<String, dynamic> toUpdateMap() {
-    final map = <String, dynamic>{
-      UserItemStatusFields.itemId: itemId,
-      UserItemStatusFields.itemType: itemType.value,
-    };
-
-    if (isFavorite != null) {
-      map[UserItemStatusFields.isFavorite] = isFavorite! ? 1 : 0;
-    }
-    if (completedAt != null) {
-      map[UserItemStatusFields.completedAt] = completedAt!.toIso8601String();
-    }
-    if (lastPosition != null) {
-      map[UserItemStatusFields.lastPosition] = lastPosition;
-    }
-
-    return map;
-  }
-
-  /// إنشاء نسخة محدثة
-  UserItemStatusModel copyWith({
-    int? id,
-    int? itemId,
-    ItemType? itemType,
-    bool? isFavorite,
-    DateTime? completedAt,
-    int? lastPosition,
-    bool clearCompletedAt = false,
-    bool clearLastPosition = false,
-  }) {
-    return UserItemStatusModel(
-      id: id ?? this.id,
-      itemId: itemId ?? this.itemId,
-      itemType: itemType ?? this.itemType,
-      isFavorite: isFavorite ?? this.isFavorite,
-      completedAt: clearCompletedAt ? null : (completedAt ?? this.completedAt),
-      lastPosition:
-          clearLastPosition ? null : (lastPosition ?? this.lastPosition),
-    );
-  }
-
   /// التحقق من حالة الإكمال
-  bool get isCompleted => completedAt != null;
+  bool get isCompleted => _completedAt != null && _completedAt.isNotEmpty;
+
+  String? get completedString {
+    if (_completedAt == null) return null;
+    return _completedAt;
+  }
+
+  DateTime? get completedDate {
+    if (_completedAt == null || _completedAt.isEmpty) return null;
+    return DateTime.parse(_completedAt);
+  }
 
   /// التحقق من وجود موضع محفوظ
   bool get hasPosition => lastPosition != null && lastPosition! > 0;
@@ -95,7 +60,7 @@ class UserItemStatusModel {
   @override
   String toString() {
     return 'UserItemStatusModel(id: $id, itemId: $itemId, itemType: $itemType, '
-        'isFavorite: $isFavorite, completedAt: $completedAt, lastPosition: $lastPosition)';
+        'isFavorite: $isFavorite, completedAt: $completedDate, lastPosition: $lastPosition)';
   }
 
   @override
@@ -106,11 +71,17 @@ class UserItemStatusModel {
         other.itemId == itemId &&
         other.itemType == itemType &&
         other.isFavorite == isFavorite &&
-        other.completedAt == completedAt &&
+        other.completedDate == completedDate &&
         other.lastPosition == lastPosition;
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, itemId, itemType, isFavorite, completedAt, lastPosition);
+  int get hashCode => Object.hash(
+    id,
+    itemId,
+    itemType,
+    isFavorite,
+    completedDate,
+    lastPosition,
+  );
 }

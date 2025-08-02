@@ -274,7 +274,6 @@ class _BookmarkDialogState extends State<BookmarkDialog> {
       if (mounted) {
         Navigator.of(context).pop(true);
         AppToasts.showSuccess(
-          context,
           title:
               widget.isEditing
                   ? 'تم تحديث العلامة المرجعية بنجاح'
@@ -288,16 +287,13 @@ class _BookmarkDialogState extends State<BookmarkDialog> {
         error: e,
         stackTrace: StackTrace.current,
       );
-      if (mounted) {
-        AppToasts.showError(
-          context,
-          title:
-              widget.isEditing
-                  ? 'فشل في تحديث العلامة المرجعية'
-                  : 'فشل في إضافة العلامة المرجعية',
-          description: 'يرجى المحاولة مرة أخرى',
-        );
-      }
+      AppToasts.showError(
+        title:
+            widget.isEditing
+                ? 'فشل في تحديث العلامة المرجعية'
+                : 'فشل في إضافة العلامة المرجعية',
+        description: 'يرجى المحاولة مرة أخرى',
+      );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

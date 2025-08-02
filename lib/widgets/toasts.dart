@@ -1,3 +1,4 @@
+import 'package:alqayimm_app_flutter/main.dart';
 import 'package:alqayimm_app_flutter/theme/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
@@ -9,8 +10,10 @@ class AppToasts {
     BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 2)),
   ];
 
+  static BuildContext? get _context => globalNavigatorKey.currentContext;
+
   static void baseToast(
-    BuildContext context, {
+    BuildContext? context, {
     required ToastificationType type,
     required IconData icon,
     required String title,
@@ -72,18 +75,20 @@ class AppToasts {
     );
   }
 
-  static void showSuccess(
-    BuildContext context, {
+  static void showSuccess({
+    BuildContext? context,
     String title = "نجح",
     String? description,
     Duration? duration,
     VoidCallback? onUndo,
   }) {
     baseToast(
-      context,
-      foregroundColor: MaterialTheme.onSuccess(context),
-      primaryColor: Theme.of(context).colorScheme.onSurface,
-      backgroundColor: MaterialTheme.success(context),
+      context ?? _context,
+      foregroundColor:
+          context != null ? MaterialTheme.onSuccess(context) : null,
+      primaryColor:
+          context != null ? Theme.of(context).colorScheme.onSurface : null,
+      backgroundColor: context != null ? MaterialTheme.success(context) : null,
       type: ToastificationType.success,
       icon: Ionicons.checkmark_circle_sharp,
       title: title,
@@ -93,18 +98,21 @@ class AppToasts {
     );
   }
 
-  static void showError(
-    BuildContext context, {
+  static void showError({
+    BuildContext? context,
     String title = "فشل",
     String? description,
     Duration? duration,
     VoidCallback? onUndo,
   }) {
     baseToast(
-      context,
-      foregroundColor: Theme.of(context).colorScheme.error,
-      primaryColor: Theme.of(context).colorScheme.onSurface,
-      backgroundColor: Theme.of(context).colorScheme.onError,
+      context ?? _context,
+      foregroundColor:
+          context != null ? Theme.of(context).colorScheme.error : null,
+      primaryColor:
+          context != null ? Theme.of(context).colorScheme.onSurface : null,
+      backgroundColor:
+          context != null ? Theme.of(context).colorScheme.onError : null,
       type: ToastificationType.error,
       icon: Ionicons.close_circle_sharp,
       title: title,
@@ -114,18 +122,19 @@ class AppToasts {
     );
   }
 
-  static void showInfo(
-    BuildContext context, {
+  static void showInfo({
+    BuildContext? context,
     String title = "معلومات",
     String? description,
     Duration? duration,
     VoidCallback? onUndo,
   }) {
     baseToast(
-      context,
-      foregroundColor: MaterialTheme.onInfo(context),
-      primaryColor: Theme.of(context).colorScheme.onSurface,
-      backgroundColor: MaterialTheme.info(context),
+      context ?? _context,
+      foregroundColor: context != null ? MaterialTheme.onInfo(context) : null,
+      primaryColor:
+          context != null ? Theme.of(context).colorScheme.onSurface : null,
+      backgroundColor: context != null ? MaterialTheme.info(context) : null,
       type: ToastificationType.info,
       icon: Ionicons.information_circle_sharp,
       title: title,

@@ -60,9 +60,8 @@ class _AllNotesPageState extends State<AllNotesPage> {
         _isLoading = false;
       });
     } catch (e) {
-      if (!mounted) return;
       setState(() => _isLoading = false);
-      AppToasts.showError(context, title: 'خطأ في تحميل الملاحظات');
+      AppToasts.showError(title: 'خطأ في تحميل الملاحظات');
     }
   }
 
@@ -94,13 +93,10 @@ class _AllNotesPageState extends State<AllNotesPage> {
   Future<void> _shareNote(UserNoteModel note) async {
     final shareText = '${note.title}\n\n${note.content}';
     await Clipboard.setData(ClipboardData(text: shareText));
-    if (mounted) {
-      AppToasts.showSuccess(
-        context,
-        title: 'تم نسخ الملاحظة',
-        description: 'تم نسخ الملاحظة إلى الحافظة',
-      );
-    }
+    AppToasts.showSuccess(
+      title: 'تم نسخ الملاحظة',
+      description: 'تم نسخ الملاحظة إلى الحافظة',
+    );
   }
 
   /// بناء شريحة العلامة
@@ -361,7 +357,6 @@ class _AllNotesPageState extends State<AllNotesPage> {
       _loadNotes();
       _loadTags(); // إعادة تحميل العلامات في حالة حذف آخر ملاحظة لعلامة معينة
       AppToasts.showSuccess(
-        context,
         title: 'تم حذف الملاحظة',
         description: 'تم حذف "${note.title}" بنجاح',
       );

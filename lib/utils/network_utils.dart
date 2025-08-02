@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:alqayimm_app_flutter/main.dart';
 import 'package:alqayimm_app_flutter/utils/preferences_utils.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -10,14 +11,22 @@ class NetworkUtils {
       if (connectivityResult.contains(ConnectivityResult.none)) {
         return ConnectionCheckResult(
           canProceed: false,
-          message: 'لا يوجد اتصال بالإنترنت',
+          message: 'لا يوجد اتصال بالشبكة',
+        );
+      }
+
+      // تحقق من وجود إنترنت فعلي
+      final hasInternet = await _hasRealInternet();
+      if (!hasInternet) {
+        return ConnectionCheckResult(
+          canProceed: false,
+          message: 'لا يوجد اتصال فعلي بالإنترنت',
         );
       }
 
       // التحقق إذا كان الاتصال عبر بيانات الجوال
       if (connectivityResult.contains(ConnectivityResult.mobile)) {
-        final showWarning = !PreferencesUtils.getWifiWarningDontShowAgain();
-
+        final showWarning = !PreferencesUtils.wifiWarningDontShowAgain;
         if (showWarning) {
           return ConnectionCheckResult(
             canProceed: false,
@@ -34,6 +43,15 @@ class NetworkUtils {
         canProceed: false,
         message: 'خطأ في فحص الاتصال',
       );
+    }
+  }
+
+  static Future<bool> _hasRealInternet() async {
+    try {
+      final result = await InternetAddress.lookup('1.1.1.1');
+      return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+    } catch (_) {
+      return false;
     }
   }
 }

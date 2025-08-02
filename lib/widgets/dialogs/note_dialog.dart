@@ -116,25 +116,21 @@ class _NoteDialogState extends State<NoteDialog> {
             : await UserNotesRepository.updateNote(note);
 
     setState(() => _isLoading = false);
-    if (mounted) {
-      if (success != null) {
-        Navigator.of(context).pop(true);
-        AppToasts.showSuccess(
-          context,
-          title:
-              widget.noteId == null ? 'تم حفظ الملاحظة' : 'تم تعديل الملاحظة',
-          description: 'يمكنك مراجعة الملاحظات في قسم الملاحظات',
-        );
-      } else {
-        AppToasts.showError(
-          context,
-          title:
-              widget.noteId == null
-                  ? 'فشل في حفظ الملاحظة'
-                  : 'فشل في تعديل الملاحظة',
-          description: 'يرجى المحاولة مرة أخرى',
-        );
-      }
+    if (success != null) {
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+      AppToasts.showSuccess(
+        title: widget.noteId == null ? 'تم حفظ الملاحظة' : 'تم تعديل الملاحظة',
+        description: 'يمكنك مراجعة الملاحظات في قسم الملاحظات',
+      );
+    } else {
+      AppToasts.showError(
+        title:
+            widget.noteId == null
+                ? 'فشل في حفظ الملاحظة'
+                : 'فشل في تعديل الملاحظة',
+        description: 'يرجى المحاولة مرة أخرى',
+      );
     }
   }
 

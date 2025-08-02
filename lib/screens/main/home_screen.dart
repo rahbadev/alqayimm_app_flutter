@@ -11,7 +11,9 @@ import 'package:alqayimm_app_flutter/screens/settings/settings_screen.dart';
 import 'package:alqayimm_app_flutter/screens/user/favorites_screen.dart';
 import 'package:alqayimm_app_flutter/screens/user/user_settings_screen.dart';
 import 'package:alqayimm_app_flutter/theme/util.dart' as util;
+import 'package:alqayimm_app_flutter/widgets/download/download_progress_indicator.dart';
 import 'package:alqayimm_app_flutter/widgets/main_bottom_nav_bar.dart';
+import 'package:badges/badges.dart' as badges;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -167,51 +169,7 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
           actions: [
             // زر التنزيلات مع badge
-            Consumer<DownloadProvider>(
-              builder: (context, downloadProvider, child) {
-                final activeDownloads = downloadProvider.runningDownloadsCount;
-                return Stack(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.download),
-                      onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => const DownloadsScreen(),
-                          ),
-                        );
-                      },
-                      tooltip: 'التنزيلات',
-                    ),
-                    if (activeDownloads > 0)
-                      Positioned(
-                        right: 8,
-                        top: 8,
-                        child: Container(
-                          padding: const EdgeInsets.all(2),
-                          decoration: BoxDecoration(
-                            color: Colors.red,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          constraints: const BoxConstraints(
-                            minWidth: 16,
-                            minHeight: 16,
-                          ),
-                          child: Text(
-                            '$activeDownloads',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ),
-                  ],
-                );
-              },
-            ),
+            DownloadProgressIndicator(),
             if (_selectedIndex == 1)
               IconButton(
                 icon: const Icon(Icons.refresh),

@@ -1,5 +1,4 @@
 import 'package:alqayimm_app_flutter/db/enums.dart';
-import 'package:alqayimm_app_flutter/main.dart';
 import 'package:alqayimm_app_flutter/widgets/animations/animated_icon_switcher.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
@@ -143,7 +142,7 @@ class DownloadButton extends StatelessWidget {
           strokeWidth: 3,
           color: color,
           value:
-              (progress != null && progress! >= 0.0 && progress! <= 1.0)
+              (progress != null && progress! >= 0.01 && progress! <= 1.0)
                   ? progress!.clamp(0.0, 1.0)
                   : null,
           strokeCap: StrokeCap.round,

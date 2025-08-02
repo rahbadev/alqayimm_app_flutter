@@ -2,16 +2,16 @@ import 'package:alqayimm_app_flutter/db/main/db_helper.dart';
 import 'package:alqayimm_app_flutter/downloader/download_provider.dart';
 import 'package:alqayimm_app_flutter/screens/main/home_screen.dart';
 import 'package:alqayimm_app_flutter/screens/main/website_screen.dart';
-import 'package:alqayimm_app_flutter/tests/test_downloader_screen.dart';
+import 'package:alqayimm_app_flutter/test/downloader_test_screen.dart';
 import 'package:alqayimm_app_flutter/utils/app_strings.dart';
 import 'package:alqayimm_app_flutter/theme/theme.dart';
 import 'package:alqayimm_app_flutter/theme/util.dart';
 import 'package:alqayimm_app_flutter/utils/preferences_utils.dart';
-import 'package:alqayimm_app_flutter/widgets/download/global_download_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
+import 'package:toastification/toastification.dart';
 
 final themeModeNotifier = ValueNotifier<ThemeMode>(ThemeMode.system);
 var logger = Logger(
@@ -26,6 +26,8 @@ var logger = Logger(
 );
 
 final GlobalKey<SiteScreenState> siteScreenKey = GlobalKey<SiteScreenState>();
+final GlobalKey<NavigatorState> globalNavigatorKey =
+    GlobalKey<NavigatorState>();
 
 final RouteObserver<ModalRoute<void>> routeObserver =
     RouteObserver<ModalRoute<void>>();
@@ -33,15 +35,15 @@ final RouteObserver<ModalRoute<void>> routeObserver =
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  await PreferencesUtils.init();
+
   await DbHelper.database;
 
   final downloadProvider = DownloadProvider();
   await downloadProvider.initialize();
 
-  await PreferencesUtils.init();
-
   // استرجاع اختيار المستخدم
-  final savedMode = PreferencesUtils.getAppThemeMode();
+  final savedMode = PreferencesUtils.appThemeMode;
   themeModeNotifier.value = ThemeMode.values[savedMode];
   runApp(
     MultiProvider(
@@ -60,26 +62,27 @@ class MyApp extends StatelessWidget {
     TextTheme textTheme = createTextTheme(context, fontName, fontName);
     MaterialTheme theme = MaterialTheme(textTheme);
 
-    return ValueListenableBuilder<ThemeMode>(
-      valueListenable: themeModeNotifier,
-      builder: (context, mode, _) {
-        return MaterialApp(
-          theme: theme.light(),
-          darkTheme: theme.dark(),
-          navigatorObservers: [routeObserver],
-          themeMode: mode,
-          debugShowCheckedModeBanner: false,
-          home: GlobalDownloadIndicator(
-            child: const MyHomePage(title: AppStrings.appTitle),
-            // child: const TestDownloaderScreen(),
-          ),
-          locale: const Locale('ar'),
-          supportedLocales: const [
-            Locale('ar'), // يمكنك إضافة لغات أخرى إذا أردت
-          ],
-          localizationsDelegates: GlobalMaterialLocalizations.delegates,
-        );
-      },
+    return ToastificationWrapper(
+      child: ValueListenableBuilder<ThemeMode>(
+        valueListenable: themeModeNotifier,
+        builder: (context, mode, _) {
+          return MaterialApp(
+            theme: theme.light(),
+            darkTheme: theme.dark(),
+            navigatorObservers: [routeObserver],
+            themeMode: mode,
+            debugShowCheckedModeBanner: false,
+            navigatorKey: globalNavigatorKey,
+            home: const MyHomePage(title: AppStrings.appTitle),
+            // home: const DownloaderTestScreen(),
+            locale: const Locale('ar'),
+            supportedLocales: const [
+              Locale('ar'), // يمكنك إضافة لغات أخرى إذا أردت
+            ],
+            localizationsDelegates: GlobalMaterialLocalizations.delegates,
+          );
+        },
+      ),
     );
   }
 }

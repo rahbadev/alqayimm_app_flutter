@@ -85,12 +85,7 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
         setState(() {
           _bookmarks.removeWhere((bookmark) => bookmark.id == id);
         });
-        if (mounted) {
-          AppToasts.showSuccess(
-            context,
-            description: 'تم حذف العلامة المرجعية بنجاح',
-          );
-        }
+        AppToasts.showSuccess(description: 'تم حذف العلامة المرجعية بنجاح');
       }
     }
   }
@@ -420,13 +415,9 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
       bookmark: bookmark,
     );
 
-    if (result == true && mounted) {
+    if (result == true) {
       await _loadBookmarks();
-
-      AppToasts.showSuccess(
-        context,
-        description: 'تم تحديث العلامة المرجعية بنجاح',
-      );
+      AppToasts.showSuccess(description: 'تم تحديث العلامة المرجعية بنجاح');
     }
   }
 }

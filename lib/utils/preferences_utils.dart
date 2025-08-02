@@ -3,50 +3,41 @@ import 'package:shared_preferences/shared_preferences.dart';
 class PreferencesUtils {
   static SharedPreferences? _prefs;
 
-  /// key لتفضيلات عدم الإظهار مرة أخرى للواي فاي
+  // Keys
   static const String _wifiWarningKey = 'wifi_warning_dont_show_again';
   static const String _appThemeModeKey = 'app_theme_mode';
+  static const String _requireWiFiKey = 'require_wifi_for_downloads';
 
-  /// تهيئة الـ preferences مرة واحدة فقط
+  /// تهيئة الـ SharedPreferences
   static Future<void> init() async {
     _prefs ??= await SharedPreferences.getInstance();
   }
 
-  /// getter عام للوصول للـ prefs
-  static SharedPreferences get prefs {
-    if (_prefs == null) {
-      throw Exception('PreferencesUtils not initialized. Call init() first.');
-    }
+  /// الحصول على instance الـ SharedPreferences
+  static SharedPreferences get instance {
+    assert(
+      _prefs != null,
+      'PreferencesUtils not initialized. Call init() first.',
+    );
     return _prefs!;
   }
 
-  /// مثال: حفظ قيمة
-  static Future<void> _setBool(String key, bool value) async {
-    await prefs.setBool(key, value);
-  }
+  // WiFi Settings
+  static Future<void> setRequireWiFi(bool value) =>
+      instance.setBool(_requireWiFiKey, value);
 
-  /// مثال: قراءة قيمة
-  static bool _getBool(String key, {bool defaultValue = false}) {
-    return prefs.getBool(key) ?? defaultValue;
-  }
+  static bool get requireWiFi => instance.getBool(_requireWiFiKey) ?? true;
 
-  /// حفظ اختيار عدم إظهار تحذير الواي فاي مرة أخرى
-  static Future<void> setWifiWarningDontShowAgain(bool value) async {
-    await _setBool(_wifiWarningKey, value);
-  }
+  // WiFi Warning
+  static Future<void> setWifiWarningDontShowAgain(bool value) =>
+      instance.setBool(_wifiWarningKey, value);
 
-  /// الحصول على حالة عدم إظهار تحذير الواي فاي
-  static bool getWifiWarningDontShowAgain() {
-    return _getBool(_wifiWarningKey, defaultValue: false);
-  }
+  static bool get wifiWarningDontShowAgain =>
+      instance.getBool(_wifiWarningKey) ?? false;
 
-  /// حفظ وضع السمة الحالي
-  static Future<void> setAppThemeMode(int modeIndex) async {
-    await prefs.setInt(_appThemeModeKey, modeIndex);
-  }
+  // Theme Mode
+  static Future<void> setAppThemeMode(int modeIndex) =>
+      instance.setInt(_appThemeModeKey, modeIndex);
 
-  /// الحصول على وضع السمة الحالي
-  static int getAppThemeMode() {
-    return prefs.getInt(_appThemeModeKey) ?? 0;
-  }
+  static int get appThemeMode => instance.getInt(_appThemeModeKey) ?? 0;
 }

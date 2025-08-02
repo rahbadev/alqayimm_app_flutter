@@ -80,13 +80,10 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
         _errorMessage = 'الملف غير صالح أو غير مدعوم';
       });
       _isInitAudioRunning = false;
-      if (mounted) {
-        AppToasts.showError(
-          context,
-          title: 'خطأ في تحميل الملف',
-          description: 'الملف غير صالح أو غير مدعوم',
-        );
-      }
+      AppToasts.showError(
+        title: 'خطأ في تحميل الملف',
+        description: 'الملف غير صالح أو غير مدعوم',
+      );
       return;
     }
 
@@ -106,13 +103,10 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
         _errorMessage =
             'خطأ في تحميل الملف: تحقق من الاتصال أو الملف غير موجود';
       });
-      if (mounted) {
-        AppToasts.showError(
-          context,
-          title: 'خطأ في تحميل الملف',
-          description: 'تحقق من الاتصال أو الملف غير موجود',
-        );
-      }
+      AppToasts.showError(
+        title: 'خطأ في تحميل الملف',
+        description: 'تحقق من الاتصال أو الملف غير موجود',
+      );
     }
     _isInitAudioRunning = false;
   }

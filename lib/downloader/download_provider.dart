@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'package:alqayimm_app_flutter/db/enums.dart';
 import 'package:alqayimm_app_flutter/db/main/models/base_content_model.dart';
-import 'package:alqayimm_app_flutter/downloader/download_task_info.dart';
-import 'package:alqayimm_app_flutter/downloader/download_task_update.dart';
+import 'package:alqayimm_app_flutter/downloader/download_task_model.dart';
 import 'package:alqayimm_app_flutter/main.dart';
 import 'package:alqayimm_app_flutter/downloader/download_manager.dart';
+import 'package:alqayimm_app_flutter/utils/file_utils.dart';
+import 'package:alqayimm_app_flutter/utils/network_utils.dart';
+import 'package:alqayimm_app_flutter/utils/preferences_utils.dart';
 import 'package:alqayimm_app_flutter/widgets/dialogs/wifi_warning_dialog.dart';
 import 'package:alqayimm_app_flutter/widgets/toasts.dart';
 import 'package:background_downloader/background_downloader.dart';
@@ -15,56 +17,65 @@ class DownloadProvider extends ChangeNotifier {
   final DownloadManager _downloadManager = DownloadManager.instance;
 
   // State variables
-  final Map<String, DownloadStatus> _itemDownloadStatus = {};
   bool _isInitialized = false;
 
   // Subscriptions
-  StreamSubscription<List<DownloadTaskInfo>>? _activeDownloadsSubscription;
-  StreamSubscription<DownloadTaskUpdate>? _downloadUpdatesSubscription;
+  StreamSubscription<List<DownloadTaskModel>>? _downloadUpdatesSubscription;
 
-  Map<String, DownloadTaskInfo> get allDownloads {
-    // تحويل القائمة إلى خريطة للتوافق مع الكود الموجود
-    final allDownloads = _downloadManager.getAllDownloads();
-    return Map.fromEntries(
-      allDownloads.map((download) => MapEntry(download.taskId, download)),
-    );
-  }
+  // ===== Getters (كلها تعتمد على DownloadManager فقط) =====
+  Map<String, DownloadTaskModel> get allDownloadsMap =>
+      _downloadManager.allDownloadsMap;
 
-  bool get hasActiveDownloads => allDownloads.isNotEmpty;
+  List<DownloadTaskModel> get allDownloadsList =>
+      _downloadManager.allDownloadsList;
+
+  bool get hasActiveDownloads => runningDownloads.isNotEmpty;
+
   bool get isInitialized => _isInitialized;
 
-  int get totalDownloads => allDownloads.length;
+  int get totalDownloads => allDownloadsList.length;
 
-  Map<String, DownloadTaskInfo> get runningDownloads {
+  Map<String, DownloadTaskModel> get pausedDownloads {
     return Map.fromEntries(
-      allDownloads.values
+      allDownloadsMap.values
           .where(
-            (download) =>
-                download.status.isNotFinalState ||
-                download.status != TaskStatus.paused,
+            (download) => download.taskStatusUpdate.status == TaskStatus.paused,
           )
           .map((download) => MapEntry(download.taskId, download)),
     );
   }
 
-  int get runningDownloadsCount =>
-      allDownloads.values
-          .where((download) => download.status == TaskStatus.running)
-          .length;
-  Map<String, DownloadTaskInfo> get completedDownloads {
+  Map<String, DownloadTaskModel> get runningDownloads {
     return Map.fromEntries(
-      allDownloads.values
-          .where((download) => download.status == TaskStatus.complete)
+      allDownloadsMap.values
+          .where(
+            (download) =>
+                download.taskStatus.isNotFinalState &&
+                download.taskStatus != TaskStatus.paused,
+          )
           .map((download) => MapEntry(download.taskId, download)),
     );
   }
 
-  int get completedDownloadsCount =>
-      allDownloads.values
-          .where((download) => download.status == TaskStatus.complete)
-          .length;
+  double runningDownloadsProgress() {
+    final totalProgress = runningDownloads.values.fold<double>(
+      0.0,
+      (sum, download) => sum + (download.progress),
+    );
+    return totalProgress / runningDownloads.length;
+  }
 
-  /// تهيئة Provider
+  Map<String, DownloadTaskModel> get notCompletedDownloads {
+    return Map.fromEntries(
+      allDownloadsMap.values
+          .where((download) => download.taskStatus.isNotFinalState)
+          .map((download) => MapEntry(download.taskId, download)),
+    );
+  }
+
+  int get runningDownloadsCount => runningDownloads.length;
+
+  // ===== Initialization =====
   Future<void> initialize() async {
     if (_isInitialized) return;
 
@@ -72,13 +83,11 @@ class DownloadProvider extends ChangeNotifier {
       // تهيئة DownloadManager
       await _downloadManager.initialize();
 
-      // الاشتراك في التحديثات
-      _activeDownloadsSubscription = _downloadManager.activeDownloads.listen(
-        _onActiveDownloadsChanged,
-      );
+      await setGlobalRequireWiFi(PreferencesUtils.requireWiFi);
 
+      // الاشتراك في التحديثات (تبسيط: فقط notifyListeners)
       _downloadUpdatesSubscription = _downloadManager.downloadUpdates.listen(
-        _onDownloadUpdate,
+        (_) => notifyListeners(), // ✅ بساطة: فقط أعلم الـ UI عن التحديث
       );
 
       _isInitialized = true;
@@ -91,20 +100,19 @@ class DownloadProvider extends ChangeNotifier {
     }
   }
 
-  /// الحصول على حالة التنزيل لعنصر معين
+  // ===== Core Methods (كلها تعتمد على DownloadManager) =====
+
   DownloadStatus getDownloadStatus(BaseContentModel item) {
-    final key = _getItemKey(item);
-    return _itemDownloadStatus[key] ?? DownloadStatus.none;
+    final downloadInfo = _downloadManager.getItemTaskInfo(item);
+    return downloadInfo?.downloadStatus ?? DownloadStatus.none;
   }
 
   /// الحصول على معلومات التنزيل لعنصر معين
-  DownloadTaskInfo? getDownloadInfo(BaseContentModel item) {
-    // استخدام البحث السريع من DownloadManager مباشرة
-    return _downloadManager.getItemTaskInfo(item);
-  }
+  DownloadTaskModel? getDownloadInfo(BaseContentModel item) =>
+      _downloadManager.getItemTaskInfo(item);
 
   /// بدء تنزيل عنصر
-  Future<void> startDownload(
+  Future<bool> startDownload(
     BuildContext context,
     BaseContentModel item, {
     bool forceDownload = false,
@@ -115,205 +123,145 @@ class DownloadProvider extends ChangeNotifier {
         await initialize();
       }
 
-      // تحديث الحالة مؤقتاً
-      _updateItemStatus(item, DownloadStatus.progress);
-
-      final result = await _downloadManager.startDownload(
-        item: item,
-        forceDownload: forceDownload,
-      );
-
-      switch (result) {
-        case DownloadResult.alreadyExists:
-          _updateItemStatus(item, DownloadStatus.downloaded);
-          return;
+      // التعامل مع حالة التنزيل القسري
+      // إذا كان forceDownload صحيحًا، نقوم بإزالة التنزيل الحالي
+      if (forceDownload) {
+        logger.d('Force download for item: ${item.id}');
+        await removeDownload(item);
       }
+      // إذا لم يكن forceDownload صحيحًا
+      // نقوم بالتحقق مما إذا كان الملف موجودًا بالفعل
+      // وإذا كان التنزيل في حالة مكتملة
+      // نعود مباشرة بدون بدء التنزيل مرة أخرى
+      else {
+        final fileExists = await FileUtils.isItemFileExists(item);
+        final taskInfo = getDownloadInfo(item);
+        final taskStatus = taskInfo?.taskStatusUpdate.status;
+        logger.d(
+          'File exists: $fileExists, Task status: $taskStatus for item: ${item.id}',
+        );
 
-      if (!result.success) {
-        // إذا كان السبب تحذير الواي فاي
-        if (result.message?.contains('تحذير') == true) {
-          _updateItemStatus(item, DownloadStatus.none);
-          if (context.mounted) {
-            AppToasts.showError(context, description: result.message!);
-            final shouldProceed = await showWifiWarningDialog(context);
-            if (shouldProceed == true && context.mounted) {
-              // إعادة المحاولة مع تجاهل تحذير الواي فاي
-              return startDownload(context, item, forceDownload: true);
-            }
-          }
-
-          return;
-        }
-
-        // خطأ آخر
-        _updateItemStatus(item, DownloadStatus.none);
-        if (context.mounted) {
-          AppToasts.showError(
-            context,
-            description: result.message ?? 'فشل في بدء التنزيل',
-          );
-        }
-        return;
-      }
-
-      // نجح بدء التنزيل
-      if (result.filePath != null) {
-        // الملف موجود بالفعل
-        _updateItemStatus(item, DownloadStatus.downloaded);
-        if (context.mounted) {
-          AppToasts.showSuccess(context, description: 'الملف موجود بالفعل');
+        if (fileExists && taskStatus == TaskStatus.complete) {
+          logger.d('File already exists and is complete for item: ${item.id}');
+          return true;
         }
       }
+
+      // ignore: use_build_context_synchronously
+      final canProceed = await _canDownloadProceed(context, item);
+      logger.d('Can proceed with download: $canProceed');
+      if (!canProceed) return false;
+
+      // إذا كان التنزيل في حالة إيقاف مؤقت، نقوم باستئنافه
+      final taskInfo = getDownloadInfo(item);
+      if (taskInfo != null &&
+          taskInfo.taskStatusUpdate.status == TaskStatus.paused) {
+        final result = await resumeDownload(taskInfo);
+        if (result) {
+          logger.d('Resumed download for item: ${item.id}');
+          return true;
+        }
+        logger.e('Failed to resume download for item: ${item.id}');
+        await removeDownload(item);
+      }
+
+      // إذا لم يكن في حالة إيقاف مؤقت، نقوم ببدء التنزيل
+      return await _downloadManager.startDownload(item: item);
     } catch (e) {
-      _updateItemStatus(item, DownloadStatus.none);
-      if (context.mounted) {
-        AppToasts.showError(context, description: 'خطأ في بدء التنزيل: $e');
-      }
+      AppToasts.showError(title: 'خطأ في بدء التنزيل', description: '$e');
       logger.e('Error starting download: $e');
+      return false;
     }
   }
 
-  /// استئناف تنزيل
-  Future<void> resumeDownload(String taskId) async {
-    try {
-      final success = await _downloadManager.resumeDownload(taskId);
-      if (!success) {
-        logger.w('Failed to resume download: $taskId');
-      }
-    } catch (e) {
-      logger.e('Error resuming download: $e');
-    }
-  }
-
-  /// إيقاف تنزيل مؤقت
-  Future<void> pauseDownload(String taskId) async {
-    try {
-      final success = await _downloadManager.pauseDownload(taskId);
-      if (!success) {
-        logger.w('Failed to pause download: $taskId');
-      }
-    } catch (e) {
-      logger.e('Error pausing download: $e');
-    }
-  }
-
-  /// إلغاء تنزيل
-  Future<void> cancelDownload(
-    BuildContext context,
-    String taskId, {
-    bool deleteFile = false,
-  }) async {
-    try {
-      final success = await _downloadManager.cancelDownload(
-        taskId,
-        deleteFile: deleteFile,
-      );
-
-      if (context.mounted) {
-        if (success) {
-          AppToasts.showSuccess(context, description: 'تم إلغاء التنزيل');
-        } else {
-          AppToasts.showError(context, description: 'فشل في إلغاء التنزيل');
-        }
-      }
-    } catch (e) {
-      if (context.mounted) {
-        AppToasts.showError(context, description: 'خطأ في إلغاء التنزيل');
-      }
-      logger.e('Error canceling download: $e');
-    }
-  }
-
-  /// حذف ملف منزل
-  Future<void> deleteDownloadedFile(
+  Future<bool> _canDownloadProceed(
     BuildContext context,
     BaseContentModel item,
   ) async {
-    try {
-      final success = await _downloadManager.deleteDownloadedFile(item);
+    // التحقق من نوع الاتصال
+    final canProceed = await _checkConnectionAndWarn(context);
 
-      if (context.mounted) {
-        if (success) {
-          AppToasts.showInfo(context, description: 'تم حذف الملف');
+    // // التحقق من توفر المساحة
+    // final hasSpace = await _checkAvailableSpace(item);
+    // if (!hasSpace) return false;
+
+    return canProceed;
+  }
+
+  /// التحقق من نوع الاتصال قبل بدء التنزيل
+  Future<bool> _checkConnectionAndWarn(BuildContext context) async {
+    final connectionResult = await NetworkUtils.checkConnectionType();
+
+    // إذا لا يمكن المتابعة لأي سبب (لا يوجد اتصال أو تحذير بيانات)
+    if (!connectionResult.canProceed) {
+      // إذا كان هناك تحذير بيانات الجوال، أظهر التحذير
+      if (connectionResult.showWifiWarning && context.mounted) {
+        final shouldProceed = await showWifiWarningDialog(context);
+        if (shouldProceed == null || !shouldProceed) {
+          return false;
         } else {
-          AppToasts.showError(context, description: 'فشل في حذف الملف');
+          AppToasts.showError(description: connectionResult.message);
+          return false;
         }
       }
-    } catch (e) {
-      if (context.mounted) {
-        AppToasts.showError(context, description: 'خطأ في حذف الملف');
-      }
-      logger.e('Error deleting file: $e');
-    }
-  }
-
-  /// تحديث حالة جميع العناصر من النظام
-  Future<void> refreshAllDownloadStatuses(List<BaseContentModel> items) async {
-    try {
-      for (final item in items) {
-        final status = await _downloadManager.getDownloadStatus(item);
-        _updateItemStatus(item, status, notifyUi: false);
-      }
-    } catch (e) {
-      logger.e('Error refreshing download statuses: $e');
-    }
-    notifyListeners();
-  }
-
-  // ==================== Private Methods ====================
-
-  void _onActiveDownloadsChanged(List<DownloadTaskInfo> downloads) {
-    // تحديث حالات العناصر من التنزيلات الواردة
-    for (final download in downloads) {
-      final status = _mapTaskStatusToDownloadStatus(download.status);
-      _updateItemStatus(download.item, status, notifyUi: false);
+      // إذا لا يوجد اتصال فعلي أو أي سبب آخر
+      AppToasts.showError(
+        description: connectionResult.message ?? 'لا يوجد اتصال بالإنترنت',
+      );
+      return false;
     }
 
-    notifyListeners();
+    return true;
   }
 
-  void _onDownloadUpdate(DownloadTaskUpdate update) {
-    if (update.item != null) {
-      final status = _mapTaskStatusToDownloadStatus(update.status);
-      _updateItemStatus(update.item!, status);
+  /// التحقق من توفر المساحة قبل بدء التنزيل
+  Future<bool> _checkAvailableSpace(BaseContentModel item) async {
+    final spaceResult = await FileUtils.checkAvailableSpace(item);
+    if (!spaceResult.hasEnoughSpace) {
+      AppToasts.showError(description: 'لا يوجد مساحة كافية للتنزيل');
+      return false;
     }
+    return true;
   }
 
-  void _updateItemStatus(
-    BaseContentModel item,
-    DownloadStatus status, {
-    bool notifyUi = true,
-  }) {
-    final key = _getItemKey(item);
-    _itemDownloadStatus[key] = status;
-    if (notifyUi) {
-      notifyListeners();
+  /// تغيير متطلب الواي فاي لجميع التنزيلات
+  Future<void> setGlobalRequireWiFi(
+    bool requireWiFi, {
+    bool rescheduleRunningTasks = true,
+  }) async {
+    PreferencesUtils.setRequireWiFi(requireWiFi);
+    _downloadManager.setGlobalRequireWiFi(
+      requireWiFi,
+      rescheduleRunningTasks: rescheduleRunningTasks,
+    );
+  }
+
+  /// استئناف تنزيل
+  Future<bool> resumeDownload(DownloadTaskModel task) =>
+      _downloadManager.resumeDownload(task);
+
+  /// إيقاف تنزيل مؤقتاً
+  Future<bool> pauseDownload(DownloadTaskModel task) async =>
+      _downloadManager.pauseDownload(task);
+
+  /// إلغاء تنزيل
+  Future<bool> removeDownload(
+    BaseContentModel item, {
+    bool removeFile = true,
+    bool trueIfNotExists = true,
+  }) async {
+    final task = _downloadManager.getItemTaskInfo(item);
+    if (task != null) {
+      _downloadManager.removeDownload(task);
     }
-  }
-
-  String _getItemKey(BaseContentModel item) {
-    return '${item.runtimeType}_${item.id}';
-  }
-
-  DownloadStatus _mapTaskStatusToDownloadStatus(TaskStatus taskStatus) {
-    switch (taskStatus) {
-      case TaskStatus.running:
-      case TaskStatus.enqueued:
-      case TaskStatus.waitingToRetry:
-        return DownloadStatus.progress;
-      case TaskStatus.complete:
-        return DownloadStatus.downloaded;
-      case TaskStatus.paused:
-        return DownloadStatus
-            .none; // أو أضف DownloadStatus.paused إذا كنت تريد حالة منفصلة
-      default:
-        return DownloadStatus.none;
+    if (!removeFile) {
+      return true;
     }
+    return FileUtils.deleteItemFile(item, trueIfNotExists: true);
   }
 
   @override
   void dispose() {
-    _activeDownloadsSubscription?.cancel();
     _downloadUpdatesSubscription?.cancel();
     super.dispose();
   }

@@ -40,6 +40,7 @@ Future<bool?> showWifiWarningDialog(
             onConfirm: () async {
               if (dontShowAgain) {
                 await PreferencesUtils.setWifiWarningDontShowAgain(true);
+                await PreferencesUtils.setRequireWiFi(false);
               }
               if (onProceed != null) onProceed();
               if (context.mounted) {

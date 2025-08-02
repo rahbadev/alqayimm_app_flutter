@@ -13,26 +13,34 @@ class UserItemStatusRepository {
 
   // ==================== Core Operations ====================
 
-  /// العملية الأساسية: إدراج أو تحديث حسب وجود العنصر
   static Future<bool> upsert(UserItemStatusModel model) async {
+    final db = await _db;
     try {
-      final db = await _db;
+      // جلب السطر الحالي (إن وجد)
       final existing = await _getExistingItem(db, model.itemId, model.itemType);
+      logger.d(
+        'Upserting item status: ${model.itemId}, existing: ${existing?.toMap()}',
+      );
 
-      if (existing == null) {
-        final map = model.toMap();
-        map.remove(UserItemStatusFields.id);
-        await db.insert(_table, map);
-      } else {
-        final updateMap = model.toUpdateMap();
-        // إزالة المفاتيح الأساسية من الخريطة
-        updateMap.remove(UserItemStatusFields.itemId);
-        updateMap.remove(UserItemStatusFields.itemType);
+      // دمج القيم: إذا القيمة مرسلة نستخدمها، إذا null نستخدم القديمة (إن وجدت)
+      final merged = UserItemStatusModel(
+        id: existing?.id ?? 0,
+        itemId: model.itemId,
+        itemType: model.itemType,
+        isFavorite: model.isFavorite ?? existing?.isFavorite,
+        completedAt: model.completedString ?? existing?.completedString,
+        lastPosition: model.lastPosition ?? existing?.lastPosition,
+      );
+      logger.d('Merged item status: ${merged.toMap()}');
 
-        if (updateMap.isNotEmpty) {
-          await _updateItem(db, model.itemId, model.itemType, updateMap);
-        }
-      }
+      final map = merged.toMap();
+      map.remove(UserItemStatusFields.id); // إذا كان id تلقائي
+
+      await db.insert(
+        _table,
+        map,
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
       return true;
     } catch (e) {
       logger.e('Error upserting item status', error: e);
@@ -57,7 +65,7 @@ class UserItemStatusRepository {
   // ==================== Favorite Operations ====================
 
   /// تعيين حالة المفضلة
-  static Future<bool> setFavorite(
+  static Future<bool> _setFavorite(
     int itemId,
     ItemType itemType,
     bool value,
@@ -74,18 +82,18 @@ class UserItemStatusRepository {
 
   /// إضافة للمفضلة
   static Future<bool> addToFavorite(int itemId, ItemType itemType) =>
-      setFavorite(itemId, itemType, true);
+      _setFavorite(itemId, itemType, true);
 
   /// إزالة من المفضلة
   static Future<bool> removeFromFavorite(int itemId, ItemType itemType) =>
-      setFavorite(itemId, itemType, false);
+      _setFavorite(itemId, itemType, false);
 
   /// تبديل حالة المفضلة
   static Future<bool> toggleFavorite(int itemId, ItemType itemType) async {
     try {
       final current = await getItem(itemId, itemType);
       final newValue = !(current?.isFavorite ?? false);
-      return await setFavorite(itemId, itemType, newValue);
+      return await _setFavorite(itemId, itemType, newValue);
     } catch (e) {
       logger.e('Error toggling favorite status', error: e);
       return false;
@@ -95,7 +103,7 @@ class UserItemStatusRepository {
   // ==================== Completion Operations ====================
 
   /// تعيين حالة الإكمال
-  static Future<bool> setCompleted(
+  static Future<bool> _setCompleted(
     int itemId,
     ItemType itemType,
     bool value,
@@ -105,25 +113,28 @@ class UserItemStatusRepository {
         id: 0,
         itemId: itemId,
         itemType: itemType,
-        completedAt: value ? DateTime.now() : null,
+        completedAt: value ? DateTime.now().toIso8601String() : '',
       ),
     );
   }
 
   /// تعليم العنصر كمكتمل
   static Future<bool> markAsCompleted(int itemId, ItemType itemType) =>
-      setCompleted(itemId, itemType, true);
+      _setCompleted(itemId, itemType, true);
 
   /// إزالة علامة الإكمال
   static Future<bool> markAsNotCompleted(int itemId, ItemType itemType) =>
-      setCompleted(itemId, itemType, false);
+      _setCompleted(itemId, itemType, false);
 
   /// تبديل حالة الإكمال
   static Future<bool> toggleCompleted(int itemId, ItemType itemType) async {
     try {
       final current = await getItem(itemId, itemType);
       final newValue = !(current?.isCompleted ?? false);
-      return await setCompleted(itemId, itemType, newValue);
+      logger.d(
+        'Toggling completed status for itemId: $itemId, current: ${current?.isCompleted}, newValue: $newValue',
+      );
+      return await _setCompleted(itemId, itemType, newValue);
     } catch (e) {
       logger.e('Error toggling completed status', error: e);
       return false;
@@ -146,20 +157,6 @@ class UserItemStatusRepository {
         lastPosition: position,
       ),
     );
-  }
-
-  /// إزالة آخر موضع
-  static Future<bool> clearLastPosition(int itemId, ItemType itemType) async {
-    try {
-      final db = await _db;
-      await _updateItem(db, itemId, itemType, {
-        UserItemStatusFields.lastPosition: null,
-      });
-      return true;
-    } catch (e) {
-      logger.e('Error clearing last position', error: e);
-      return false;
-    }
   }
 
   // ==================== Bulk Operations ====================
@@ -210,24 +207,29 @@ class UserItemStatusRepository {
     bool isCompletedOnly = false,
     bool hasPositionOnly = false,
   }) async {
-    final db = await _db;
-    final query = _buildQuery(
-      itemId: itemId,
-      itemType: itemType,
-      isFavorite: isFavorite,
-      completedAt: completedAt,
-      lastPosition: lastPosition,
-      isCompletedOnly: isCompletedOnly,
-      hasPositionOnly: hasPositionOnly,
-    );
+    try {
+      final db = await _db;
+      final query = _buildQuery(
+        itemId: itemId,
+        itemType: itemType,
+        isFavorite: isFavorite,
+        completedAt: completedAt,
+        lastPosition: lastPosition,
+        isCompletedOnly: isCompletedOnly,
+        hasPositionOnly: hasPositionOnly,
+      );
 
-    final result = await db.query(
-      _table,
-      where: query.where,
-      whereArgs: query.args,
-    );
+      final result = await db.query(
+        _table,
+        where: query.where,
+        whereArgs: query.args,
+      );
 
-    return result.map(UserItemStatusModel.fromMap).toList();
+      return result.map(UserItemStatusModel.fromMap).toList();
+    } catch (e) {
+      logger.e('Error fetching items', error: e);
+      return [];
+    }
   }
 
   // ==================== Statistics Operations ====================
@@ -282,22 +284,6 @@ class UserItemStatusRepository {
     );
 
     return result.isNotEmpty ? UserItemStatusModel.fromMap(result.first) : null;
-  }
-
-  /// تحديث عنصر موجود
-  static Future<void> _updateItem(
-    Database db,
-    int itemId,
-    ItemType itemType,
-    Map<String, dynamic> values,
-  ) async {
-    await db.update(
-      _table,
-      values,
-      where:
-          '${UserItemStatusFields.itemId} = ? AND ${UserItemStatusFields.itemType} = ?',
-      whereArgs: [itemId, itemType.value],
-    );
   }
 
   /// تحديث مجمع لكل الجدول

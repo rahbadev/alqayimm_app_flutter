@@ -4,7 +4,7 @@ import 'package:alqayimm_app_flutter/screens/items/lessons_books_screen.dart';
 import 'package:alqayimm_app_flutter/screens/items/material_list_screen.dart';
 import 'package:alqayimm_app_flutter/transitions/fade_slide_route.dart';
 import 'package:alqayimm_app_flutter/widgets/cards/main_item_card.dart';
-import 'package:alqayimm_app_flutter/widgets/download/global_download_indicator.dart';
+import 'package:alqayimm_app_flutter/widgets/download/download_progress_indicator.dart';
 import 'package:alqayimm_app_flutter/widgets/icons.dart';
 import 'package:alqayimm_app_flutter/widgets/main_items_list.dart';
 import 'package:flutter/material.dart';
@@ -102,15 +102,16 @@ class _TypesListScreenState extends State<TypesListScreen> with RouteAware {
         text:
             (widget.isBooks ? 'عدد الكتب: ' : 'عدد المواد: ') +
             type.childCount.toString(),
-        icon: AppIcons.number,
-        iconColor: Colors.orange,
+        icon: AppIcons.smallCategoryMaterial,
+        iconColor: Colors.blue,
       ),
       if (percentage > 0.0)
         MainItemDetail(
-          text: 'قمت بإنهاء: ${(percentage * 100).toStringAsFixed(0)}%',
+          text: 'نسبة الإكمال: ${(percentage * 100).toStringAsFixed(0)}%',
           icon: Icons.check_circle,
           iconColor: Colors.green,
         ),
+      // todo
       // MainItemDetail(
       //   text:
       //       (isBooks ? 'أخر ما تم فتحه: ' : 'آخر ما تم تشغيله: ') +
@@ -148,41 +149,29 @@ class _TypesListScreenState extends State<TypesListScreen> with RouteAware {
                 authorId: widget.forShik ? 27 : null,
               );
             } else if (type is LevelModel) {
-              Navigator.push(
+              MaterialsListScreen.navigateToScreen(
                 context,
-                fadeSlideRoute(
-                  MaterialsListScreen(
-                    title: item.title,
-                    levelSel: LevelSel.only([type.id]),
-                    categorySel: CategorySel.all(),
-                    authorId: widget.forShik ? 27 : null,
-                  ),
-                ),
+                item.title,
+                LevelSel.only([type.id]),
+                CategorySel.all(),
+                widget.forShik ? 27 : null,
               );
             } else if (type is CategoryModel) {
               if (widget.forShik) {
-                Navigator.push(
+                MaterialsListScreen.navigateToScreen(
                   context,
-                  fadeSlideRoute(
-                    MaterialsListScreen(
-                      title: item.title,
-                      levelSel: LevelSel.all(),
-                      categorySel: CategorySel.only([type.id]),
-                      authorId: 27,
-                    ),
-                  ),
+                  item.title,
+                  LevelSel.all(),
+                  CategorySel.only([type.id]),
+                  27,
                 );
               } else {
-                Navigator.push(
+                MaterialsListScreen.navigateToScreen(
                   context,
-                  fadeSlideRoute(
-                    MaterialsListScreen(
-                      title: item.title,
-                      levelSel: LevelSel.withLevel(),
-                      categorySel: CategorySel.only([type.id]),
-                      authorId: null,
-                    ),
-                  ),
+                  item.title,
+                  LevelSel.withLevel(),
+                  CategorySel.only([type.id]),
+                  null,
                 );
               }
             }
@@ -194,43 +183,15 @@ class _TypesListScreenState extends State<TypesListScreen> with RouteAware {
 
   @override
   Widget build(BuildContext context) {
-    return GlobalDownloadIndicator(
-      child: Scaffold(
-        appBar: AppBar(title: Text(widget.title)),
-        body: MainItemsListView<MainItem>(
-          itemsFuture:
-              widget.items.isEmpty ? Future.value([]) : _mainItemsFuture,
-          itemBuilder: (item, index) => item,
-        ),
+    Scaffold(
+      appBar: AppBar(
+        title: Text(widget.title),
+        actions: [DownloadProgressIndicator()],
+      ),
+      body: MainItemsListView<MainItem>(
+        itemsFuture: widget.items.isEmpty ? Future.value([]) : _mainItemsFuture,
+        itemBuilder: (item, index) => item,
       ),
     );
-  }
-
-  bool shouldShowCompletionPercentage({
-    required bool forBooks,
-    required bool forShik,
-    LevelSel? levelSel,
-    CategorySel? categorySel,
-  }) {
-    // لا نظهر النسبة إذا كان للشيخ أو للكتب
-    if (forBooks == true || forShik == true) return false;
-
-    // إذا كان المستوى هو withLevel() والتصنيف all أو لم يتم تخصيصه
-    if (levelSel is LevelWith &&
-        (categorySel == null || categorySel is CatAll)) {
-      return true;
-    }
-
-    // إذا كان فقط levelSel هو withLevel()
-    if (levelSel is LevelWith && categorySel == null) {
-      return true;
-    }
-
-    // إذا كان فقط categorySel هو all
-    if (categorySel is CatAll && (levelSel == null || levelSel is LevelWith)) {
-      return true;
-    }
-
-    return false;
   }
 }

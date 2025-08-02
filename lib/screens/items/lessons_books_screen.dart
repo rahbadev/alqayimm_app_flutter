@@ -1,13 +1,13 @@
 import 'package:alqayimm_app_flutter/db/main/models/base_content_model.dart';
 import 'package:alqayimm_app_flutter/db/user/db_constants.dart';
 import 'package:alqayimm_app_flutter/db/user/models/user_item_state_model.dart';
-import 'package:alqayimm_app_flutter/downloader/download_task_info.dart';
+import 'package:alqayimm_app_flutter/downloader/download_task_model.dart';
 import 'package:alqayimm_app_flutter/main.dart';
 import 'package:alqayimm_app_flutter/downloader/download_provider.dart';
 import 'package:alqayimm_app_flutter/screens/reader/pdf_viewer_screen_final.dart';
 import 'package:alqayimm_app_flutter/widgets/buttons/items_icon_buttons.dart';
 import 'package:alqayimm_app_flutter/widgets/dialogs/custom_alert_dialog.dart';
-import 'package:alqayimm_app_flutter/widgets/download/global_download_indicator.dart';
+import 'package:alqayimm_app_flutter/widgets/download/download_progress_indicator.dart';
 import 'package:alqayimm_app_flutter/widgets/toasts.dart';
 import 'package:flutter/material.dart';
 import 'package:alqayimm_app_flutter/db/enums.dart';
@@ -89,14 +89,15 @@ class _LessonsBooksScreenState extends State<LessonsBooksScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return GlobalDownloadIndicator(
-      child: Scaffold(
-        appBar: AppBar(title: Text(widget.title)),
-        body: MainItemsListView<dynamic>(
-          itemsFuture: _itemsFuture,
-          itemBuilder: (item, index) => _buildMainItem(item, index),
-          titleFontSize: 20,
-        ),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.title),
+        actions: [DownloadProgressIndicator()],
+      ),
+      body: MainItemsListView<dynamic>(
+        itemsFuture: _itemsFuture,
+        itemBuilder: (item, index) => _buildMainItem(item, index),
+        titleFontSize: 20,
       ),
     );
   }
@@ -115,16 +116,6 @@ class _LessonsBooksScreenState extends State<LessonsBooksScreen> {
 
     // دمج الحالات مع العناصر
     final mergedItems = _mergeItemsWithStatuses(items, userStatuses);
-
-    // تحديث حالة التنزيل لكل عنصر عند تحميل الشاشة
-    try {
-      if (mounted) {
-        final downloadProvider = context.read<DownloadProvider>();
-        await downloadProvider.refreshAllDownloadStatuses(mergedItems);
-      }
-    } catch (e) {
-      logger.e('Error refreshing download statuses: $e');
-    }
 
     return _items = mergedItems;
   }
@@ -159,17 +150,22 @@ class _LessonsBooksScreenState extends State<LessonsBooksScreen> {
     List<BaseContentModel> items,
     List<UserItemStatusModel> userStatuses,
   ) {
-    // بناء خريطة للحالات حسب معرف العنصر
-    final statusMap = {for (var s in userStatuses) s.itemId: s};
+    try {
+      // بناء خريطة للحالات حسب معرف العنصر
+      final statusMap = {for (var s in userStatuses) s.itemId: s};
 
-    // دمج الحالات مع العناصر
-    return items.map((item) {
-      final status = statusMap[item.id];
-      return item.copyWith(
-        isFavorite: status?.isFavorite ?? false,
-        isCompleted: status?.isCompleted ?? false,
-      );
-    }).toList();
+      // دمج الحالات مع العناصر
+      return items.map((item) {
+        final status = statusMap[item.id];
+        return item.copyWith(
+          isFavorite: status?.isFavorite ?? false,
+          isCompleted: status?.isCompleted ?? false,
+        );
+      }).toList();
+    } catch (e) {
+      logger.e('Error merging items with statuses: $e');
+      return items; // في حالة حدوث خطأ، نعيد العناصر الأصلية بدون دمج
+    }
   }
 
   // ==================== UI Building ====================
@@ -221,7 +217,7 @@ class _LessonsBooksScreenState extends State<LessonsBooksScreen> {
     if (authorName != null && authorName.isNotEmpty) {
       details.add(
         MainItemDetail(
-          text: item is BookModel ? authorName : 'المؤلف: $authorName',
+          text: item is LessonModel ? authorName : 'المؤلف: $authorName',
           icon: AppIcons.author,
           iconColor: Colors.teal,
           onTap: (_) => {},
@@ -248,11 +244,11 @@ class _LessonsBooksScreenState extends State<LessonsBooksScreen> {
     return [
       Consumer<DownloadProvider>(
         builder: (context, downloadProvider, child) {
-          final downloadStatus = downloadProvider.getDownloadStatus(item);
-          final info = downloadProvider.getDownloadInfo(item);
+          final downloadModel = downloadProvider.getDownloadInfo(item);
           return DownloadButton(
-            downloadStatus: downloadStatus,
-            progress: info?.progress ?? 0.0,
+            downloadStatus:
+                downloadModel?.downloadStatus ?? DownloadStatus.none,
+            progress: downloadModel?.progress ?? 0.0,
             onTap: () => _handleDownload(item, downloadProvider),
           );
         },
@@ -375,7 +371,7 @@ class _LessonsBooksScreenState extends State<LessonsBooksScreen> {
   }
 
   void _showDownloadOptionsDialog(
-    DownloadTaskInfo downloadInfo,
+    DownloadTaskModel downloadModel,
     DownloadProvider downloadProvider,
   ) async {
     final confirmed = await showInfoDialog(
@@ -385,7 +381,7 @@ class _LessonsBooksScreenState extends State<LessonsBooksScreen> {
       confirmText: "إيقاف",
     );
     if (confirmed == true && mounted) {
-      await downloadProvider.pauseDownload(downloadInfo.taskId);
+      await downloadProvider.pauseDownload(downloadModel);
     }
   }
 
@@ -399,8 +395,13 @@ class _LessonsBooksScreenState extends State<LessonsBooksScreen> {
       subtitle: 'تم تنزيل الملف مسبقاً، هل تريد حذف الملف ؟',
       confirmText: "حذف",
     );
-    if (confirmed == true && mounted) {
-      await downloadProvider.deleteDownloadedFile(context, item);
+    if (confirmed == true) {
+      final success = await downloadProvider.removeDownload(item);
+      if (success && mounted) {
+        _showInfoToast('تم حذف الملف بنجاح');
+      } else {
+        _showErrorToast('فشل في حذف الملف');
+      }
     }
   }
 
@@ -431,9 +432,11 @@ class _LessonsBooksScreenState extends State<LessonsBooksScreen> {
   }
 
   void _showErrorToast(String message) {
-    if (mounted) {
-      AppToasts.showError(context, description: message);
-    }
+    AppToasts.showError(description: message);
+  }
+
+  void _showInfoToast(String message) {
+    AppToasts.showInfo(description: message);
   }
 }
 

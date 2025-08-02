@@ -1,4 +1,5 @@
 import 'package:alqayimm_app_flutter/db/enums.dart';
+import 'package:alqayimm_app_flutter/db/user/db_constants.dart';
 
 abstract class BaseContentModel {
   final int id;
@@ -38,6 +39,7 @@ abstract class BaseContentModel {
   bool get hasCategory => categoryName?.isNotEmpty == true;
   bool get isDownloaded => downloadStatus == DownloadStatus.downloaded;
   bool get isDownloading => downloadStatus == DownloadStatus.progress;
+  ItemType get itemType;
 }
 
 class LessonModel extends BaseContentModel {
@@ -130,6 +132,8 @@ class LessonModel extends BaseContentModel {
       materialName: materialName ?? this.materialName,
     );
   }
+
+  ItemType get itemType => ItemType.lesson;
 }
 
 class BookModel extends BaseContentModel {
@@ -212,4 +216,6 @@ class BookModel extends BaseContentModel {
       isFavorite: isFavorite ?? this.isFavorite,
     );
   }
+
+  ItemType get itemType => ItemType.book;
 }
