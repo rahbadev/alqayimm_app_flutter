@@ -159,6 +159,16 @@ class UserItemStatusRepository {
     );
   }
 
+  /// جلب آخر موضع محفوظ للعنصر
+  static Future<int?> getLastPosition(int itemId, ItemType itemType) async {
+    try {
+      final item = await getItem(itemId, itemType);
+      return item?.lastPosition;
+    } catch (e) {
+      logger.e('Error getting last position', error: e);
+      return null;
+    }
+  }
   // ==================== Bulk Operations ====================
 
   /// مسح كل المفضلات

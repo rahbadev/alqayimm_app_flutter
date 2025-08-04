@@ -55,7 +55,7 @@ class UserDbHelper {
         ${UserBookmarkFields.id} INTEGER PRIMARY KEY AUTOINCREMENT,
         ${UserBookmarkFields.itemId} INTEGER NOT NULL,
         ${UserBookmarkFields.itemType} TEXT NOT NULL CHECK (${UserBookmarkFields.itemType} IN ${ItemType.allowedForNotesCheck()}),
-        ${UserBookmarkFields.position} INTEGER,
+        ${UserBookmarkFields.position} INTEGER NOT NULL,
         ${UserBookmarkFields.title} TEXT NOT NULL,
         ${UserBookmarkFields.createdAt} TEXT NOT NULL
       )

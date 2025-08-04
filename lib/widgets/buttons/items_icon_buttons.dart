@@ -1,5 +1,5 @@
 import 'package:alqayimm_app_flutter/db/enums.dart';
-import 'package:alqayimm_app_flutter/widgets/animations/animated_icon_switcher.dart';
+import 'package:alqayimm_app_flutter/widgets/animations/animated_icon.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 
@@ -59,17 +59,16 @@ class CompleteIconButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final String tooltip = isCompleted ? 'تم الإكمال' : 'لم يتم الإكمال';
 
-    final icon = ActionIconButton.icon(
-      icon: isCompleted ? Icons.check_circle : Icons.radio_button_unchecked,
-      key: ValueKey(isCompleted),
-      color: isCompleted ? Colors.green : (iconColor),
-      onTap: onTap,
-    );
-
-    return ActionIconButton.widget(
-      iconWidget: AnimatedIconSwitcher(icon: icon),
+    return AnimatedIconButtonToggle(
+      isOn: isCompleted,
+      iconOn: Icons.check_circle,
+      iconOff: Icons.radio_button_unchecked,
+      onPressed: onTap ?? () {},
+      iconSize: size ?? 24,
+      colorOn: Colors.green,
+      colorOff: iconColor ?? Theme.of(context).colorScheme.onSurfaceVariant,
+      transitionType: IconTransitionType.flip,
       tooltip: tooltip,
-      onTap: onTap,
     );
   }
 }
@@ -92,17 +91,16 @@ class FavIconButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final String tooltip = isFavorite ? 'إزالة من المفضلة' : 'الإضافة للمفضلة';
 
-    final iconWidget = ActionIconButton.icon(
-      icon: isFavorite ? Icons.favorite : Icons.favorite_border,
-      key: ValueKey(isFavorite),
-      color: isFavorite ? Colors.red : iconColor,
-      onTap: onTap,
-    );
-
-    return ActionIconButton.widget(
-      iconWidget: AnimatedIconSwitcher(icon: iconWidget),
+    return AnimatedIconButtonToggle(
+      isOn: isFavorite,
+      iconOn: Icons.favorite,
+      iconOff: Icons.favorite_border,
+      onPressed: onTap ?? () {},
+      iconSize: size ?? 24,
+      colorOn: Colors.red,
+      colorOff: iconColor ?? Theme.of(context).colorScheme.onSurfaceVariant,
+      transitionType: IconTransitionType.flip,
       tooltip: tooltip,
-      onTap: onTap,
     );
   }
 }

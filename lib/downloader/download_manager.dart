@@ -109,15 +109,16 @@ class DownloadManager {
       final records = await FileDownloader().database.allRecords();
 
       for (final record in records) {
-        logger.d(
-          'Resuming download for taskId: ${record.task.taskId}, status: ${record.status}, progress: ${record.task.metaData}',
-        );
         // محاولة استرداد معلومات العنصر من metadata
         var metaData = _parseItemMetadata(record.task.metaData);
-        logger.d(
-          'Parsed metadata: $metaData for taskId: ${record.task.taskId}',
-        );
-        if (metaData == null) continue;
+        if (metaData == null ||
+            (record.status.isFinalState &&
+                record.status != TaskStatus.complete)) {
+          await FileDownloader().database.deleteRecordWithId(
+            record.task.taskId,
+          );
+          continue;
+        }
 
         final downloadInfo = DownloadTaskModel(
           itemId: metaData.itemId,
@@ -128,8 +129,6 @@ class DownloadManager {
 
         _upsertDownload(downloadInfo);
       }
-
-      logger.i('Resumed ${_allDownloadsMap.length} downloads from background');
     } catch (e) {
       logger.e('Error resuming from background: $e');
     }

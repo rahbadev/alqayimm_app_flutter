@@ -183,7 +183,7 @@ class _TypesListScreenState extends State<TypesListScreen> with RouteAware {
 
   @override
   Widget build(BuildContext context) {
-    Scaffold(
+    return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
         actions: [DownloadProgressIndicator()],

@@ -2,10 +2,9 @@ import 'package:alqayimm_app_flutter/db/main/db_helper.dart';
 import 'package:alqayimm_app_flutter/downloader/download_provider.dart';
 import 'package:alqayimm_app_flutter/screens/main/home_screen.dart';
 import 'package:alqayimm_app_flutter/screens/main/website_screen.dart';
-import 'package:alqayimm_app_flutter/test/downloader_test_screen.dart';
-import 'package:alqayimm_app_flutter/utils/app_strings.dart';
 import 'package:alqayimm_app_flutter/theme/theme.dart';
 import 'package:alqayimm_app_flutter/theme/util.dart';
+import 'package:alqayimm_app_flutter/utils/app_strings.dart';
 import 'package:alqayimm_app_flutter/utils/preferences_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -74,7 +73,7 @@ class MyApp extends StatelessWidget {
             debugShowCheckedModeBanner: false,
             navigatorKey: globalNavigatorKey,
             home: const MyHomePage(title: AppStrings.appTitle),
-            // home: const DownloaderTestScreen(),
+            // home: const AnimatedIconButtonDemo(),
             locale: const Locale('ar'),
             supportedLocales: const [
               Locale('ar'), // يمكنك إضافة لغات أخرى إذا أردت

@@ -175,7 +175,11 @@ class _PdfViewerScreenFinalState extends State<PdfViewerScreenFinal>
 
   Future<void> _addBookmark() async {
     if (bookId != null) {
-      await BookmarkDialog.showForLesson(context: context, lessonId: bookId!);
+      await BookmarkDialog.showForBook(
+        context: context,
+        book: widget.book,
+        pageNumber: _currentPage,
+      );
     }
   }
 

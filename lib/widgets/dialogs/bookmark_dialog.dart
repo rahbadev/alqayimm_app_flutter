@@ -1,4 +1,6 @@
+import 'package:alqayimm_app_flutter/db/main/models/base_content_model.dart';
 import 'package:alqayimm_app_flutter/main.dart';
+import 'package:alqayimm_app_flutter/screens/player/audio_controls.dart';
 import 'package:alqayimm_app_flutter/widgets/text_fileds.dart';
 import 'package:alqayimm_app_flutter/widgets/dialogs/action_dialog.dart';
 import 'package:alqayimm_app_flutter/widgets/toasts.dart';
@@ -10,48 +12,38 @@ import 'package:alqayimm_app_flutter/db/user/repos/bookmarks_repository.dart';
 /// نافذة حوار لإضافة أو تعديل العلامات المرجعية
 class BookmarkDialog extends StatefulWidget {
   final int? id;
-  final int? itemId;
-  final ItemType? itemType;
-  final int? position;
+  final ItemType itemType;
+  final int itemId;
+  final int position;
   final String? title;
   final DateTime? createdAt;
-  final String? materialName;
-  final String? lessonName;
-  final String? bookName;
   final bool isEditing;
 
   /// Constructor رئيسي
   const BookmarkDialog({
     super.key,
     this.id,
-    this.itemId,
-    this.itemType,
-    this.position,
+    required this.itemType,
+    required this.itemId,
+    required this.position,
     this.title,
     this.createdAt,
-    this.materialName,
-    this.lessonName,
-    this.bookName,
     this.isEditing = false,
   });
 
   /// إضافة علامة مرجعية لدرس
   static Future<bool?> showForLesson({
     required BuildContext context,
-    required int lessonId,
-    int? position,
-    String? materialName,
-    String? lessonName,
+    required LessonModel lesson,
+    required int position,
   }) {
     return showDialog<bool>(
       context: context,
       builder:
           (_) => BookmarkDialog(
-            itemId: lessonId,
+            itemId: lesson.id,
             itemType: ItemType.lesson,
             position: position,
-            materialName: materialName,
-            lessonName: lessonName,
             isEditing: false,
           ),
     );
@@ -60,18 +52,16 @@ class BookmarkDialog extends StatefulWidget {
   /// إضافة علامة مرجعية لكتاب
   static Future<bool?> showForBook({
     required BuildContext context,
-    required int bookId,
-    int? pageNumber,
-    String? bookName,
+    required BookModel book,
+    required int pageNumber,
   }) {
     return showDialog<bool>(
       context: context,
       builder:
           (_) => BookmarkDialog(
-            itemId: bookId,
+            itemId: book.id,
             itemType: ItemType.book,
             position: pageNumber,
-            bookName: bookName,
             isEditing: false,
           ),
     );
@@ -87,9 +77,9 @@ class BookmarkDialog extends StatefulWidget {
       builder:
           (_) => BookmarkDialog(
             id: bookmark.id,
-            itemId: bookmark.itemId,
-            itemType: bookmark.itemType,
             position: bookmark.position,
+            itemType: bookmark.itemType,
+            itemId: bookmark.itemId,
             title: bookmark.title,
             createdAt: bookmark.createdAt,
             isEditing: true,
@@ -112,7 +102,12 @@ class _BookmarkDialogState extends State<BookmarkDialog> {
     super.initState();
     _titleController = TextEditingController(text: widget.title ?? '');
     _positionController = TextEditingController(
-      text: widget.position?.toString() ?? '',
+      text:
+          widget.itemType == ItemType.lesson
+              ? AudioControls.formatDuration(
+                Duration(milliseconds: widget.position),
+              )
+              : 'الصفحة: ${widget.position}',
     );
   }
 
@@ -162,74 +157,13 @@ class _BookmarkDialogState extends State<BookmarkDialog> {
                 hint: 'رقم الدقيقة أو رقم الصفحة',
                 icon: Icons.location_on,
                 keyboardType: TextInputType.number,
+                enabled: false,
               ),
-              if (_hasContextInfo()) ...[
-                const SizedBox(height: 24),
-                _buildContextInfo(),
-              ],
             ],
           ),
         ),
       ],
     );
-  }
-
-  /// عرض معلومات السياق إذا كانت متوفرة
-  Widget _buildContextInfo() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(
-          context,
-        ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.info_outline,
-                size: 16,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'معلومات السياق:',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          if (widget.materialName != null && widget.lessonName != null) ...[
-            Text('المادة: ${widget.materialName}'),
-            Text('الدرس: ${widget.lessonName}'),
-          ],
-          if (widget.bookName != null) Text('الكتاب: ${widget.bookName}'),
-          if (widget.position != null)
-            Text(
-              widget.itemType == ItemType.lesson
-                  ? 'الموضع الحالي: ${widget.position}'
-                  : 'الصفحة الحالية: ${widget.position}',
-            ),
-        ],
-      ),
-    );
-  }
-
-  /// التحقق من وجود معلومات السياق
-  bool _hasContextInfo() {
-    return widget.materialName != null ||
-        widget.lessonName != null ||
-        widget.bookName != null;
   }
 
   /// حفظ العلامة المرجعية
@@ -241,15 +175,16 @@ class _BookmarkDialogState extends State<BookmarkDialog> {
     try {
       final title = _titleController.text.trim();
       final positionText = _positionController.text.trim();
-      final position = positionText.isEmpty ? null : int.tryParse(positionText);
+      final position =
+          positionText.isEmpty ? 0 : int.tryParse(positionText) ?? 0;
       final now = DateTime.now();
 
       if (widget.isEditing) {
         // تحديث علامة مرجعية موجودة
         final updatedBookmark = UserBookmarkModel(
           id: widget.id!,
-          itemId: widget.itemId!,
-          itemType: widget.itemType!,
+          itemId: widget.id!,
+          itemType: widget.itemType,
           position: position,
           title: title,
           createdAt: widget.createdAt ?? now,
@@ -257,13 +192,10 @@ class _BookmarkDialogState extends State<BookmarkDialog> {
         await BookmarksRepository.updateBookmark(updatedBookmark);
       } else {
         // إضافة علامة مرجعية جديدة
-        if (widget.itemId == null || widget.itemType == null) {
-          throw Exception('يجب تحديد معرف العنصر ونوعه');
-        }
         final newBookmark = UserBookmarkModel(
           id: 0,
-          itemId: widget.itemId!,
-          itemType: widget.itemType!,
+          itemId: widget.id!,
+          itemType: widget.itemType,
           position: position,
           title: title,
           createdAt: now,

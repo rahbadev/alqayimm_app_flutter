@@ -87,7 +87,7 @@ class DownloadProvider extends ChangeNotifier {
 
       // الاشتراك في التحديثات (تبسيط: فقط notifyListeners)
       _downloadUpdatesSubscription = _downloadManager.downloadUpdates.listen(
-        (_) => notifyListeners(), // ✅ بساطة: فقط أعلم الـ UI عن التحديث
+        (_) => notifyListeners(),
       );
 
       _isInitialized = true;

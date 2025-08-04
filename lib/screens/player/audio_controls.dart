@@ -1,6 +1,4 @@
-import 'package:alqayimm_app_flutter/widgets/animations/animated_icon_switcher.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 
 class AudioControls extends StatelessWidget {
   final Duration currentPosition;
@@ -66,7 +64,7 @@ class AudioControls extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 14),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           textDirection: TextDirection.rtl,
@@ -96,39 +94,27 @@ class AudioControls extends StatelessWidget {
       );
     }
 
-    if (hasError) {
-      return IconButton(
-        icon: AnimatedIconSwitcher(
-          icon: Icon(
-            Ionicons.ios_refresh_circle,
-            color: Colors.red,
-            size: iconSize,
-          ),
-        ),
-        iconSize: iconSize,
-        onPressed: onRetry,
-        tooltip: 'إعادة المحاولة',
-      );
-    }
-
-    return _playPauseIcon(iconSize, context);
-  }
-
-  IconButton _playPauseIcon(double iconSize, BuildContext context) {
-    return IconButton(
-      padding: EdgeInsets.zero,
-      constraints: const BoxConstraints(),
-      icon: AnimatedIconSwitcher(
+    return SizedBox(
+      width: iconSize,
+      height: iconSize,
+      child: IconButton.filled(
         icon: Icon(
-          isPlaying ? Icons.pause_circle_filled : Icons.play_circle_filled,
-          key: ValueKey(isPlaying),
-          size: iconSize,
-          color: Theme.of(context).colorScheme.primary,
+          hasError
+              ? Icons.refresh_rounded
+              : isPlaying
+              ? Icons.pause
+              : Icons.play_arrow,
+        ),
+        highlightColor: hasError ? Colors.red : null,
+        iconSize: iconSize / 1.3, // حجم الأيقونة فقط هنا
+        padding: EdgeInsets.zero,
+        onPressed: hasError ? onRetry : onPlayPause,
+        tooltip:
+            hasError ? 'إعادة المحاولة' : (isPlaying ? 'إيقاف مؤقت' : 'تشغيل'),
+        style: IconButton.styleFrom(
+          backgroundColor: hasError ? Colors.red : null,
         ),
       ),
-      iconSize: iconSize,
-      onPressed: onPlayPause,
-      tooltip: isPlaying ? 'إيقاف مؤقت' : 'تشغيل',
     );
   }
 

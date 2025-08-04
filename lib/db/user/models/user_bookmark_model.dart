@@ -4,7 +4,7 @@ class UserBookmarkModel {
   final int id;
   final int itemId;
   final ItemType itemType;
-  final int? position;
+  final int position;
   final String title;
   final DateTime createdAt;
 
@@ -22,7 +22,7 @@ class UserBookmarkModel {
       id: map[UserBookmarkFields.id] as int,
       itemId: map[UserBookmarkFields.itemId] as int,
       itemType: ItemType.fromValue(map[UserBookmarkFields.itemType] as String),
-      position: map[UserBookmarkFields.position] as int?,
+      position: map[UserBookmarkFields.position] as int,
       title: map[UserBookmarkFields.title] as String,
       createdAt: DateTime.parse(map[UserBookmarkFields.createdAt] as String),
     );

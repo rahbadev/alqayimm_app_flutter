@@ -1,11 +1,15 @@
 import 'package:alqayimm_app_flutter/db/main/models/base_content_model.dart';
+import 'package:alqayimm_app_flutter/db/user/db_constants.dart';
+import 'package:alqayimm_app_flutter/db/user/repos/user_item_status_repository.dart';
 import 'package:alqayimm_app_flutter/main.dart';
 import 'package:alqayimm_app_flutter/screens/player/audio_controls.dart';
+import 'package:alqayimm_app_flutter/utils/file_utils.dart';
 import 'package:alqayimm_app_flutter/widgets/bottom_sheets/speed_slider_bottom_sheet.dart';
 import 'package:alqayimm_app_flutter/widgets/dialogs/bookmark_dialog.dart';
 import 'package:alqayimm_app_flutter/widgets/dialogs/note_dialog.dart';
 import 'package:alqayimm_app_flutter/widgets/toasts.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:just_audio/just_audio.dart';
 
 class AudioPlayerScreen extends StatefulWidget {
@@ -45,9 +49,17 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
     _audioPlayer = AudioPlayer();
     _currentIndex = widget.initialIndex;
     _initAudio();
+
     _audioPlayer.positionStream.listen((pos) {
+      logger.i('Current position: ${pos.inMilliseconds}');
       setState(() => _currentPosition = pos);
+      // احفظ الموضع فقط إذا كان المشغل جاهز وليس في البداية
+      if (_isPlaying && pos.inMilliseconds > 1000) {
+        // أكثر من ثانية واحدة
+        _saveLastPosition(pos);
+      }
     });
+
     _audioPlayer.durationStream.listen((dur) {
       setState(() => _duration = dur ?? Duration.zero);
     });
@@ -72,43 +84,57 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
       _errorMessage = null;
     });
     final lesson = widget.lessons[_currentIndex];
-    final filePath = lesson.url;
-    if (filePath == null || !(filePath.endsWith('.mp3'))) {
-      setState(() {
-        _isLoading = false;
-        _hasError = true;
-        _errorMessage = 'الملف غير صالح أو غير مدعوم';
-      });
-      _isInitAudioRunning = false;
-      AppToasts.showError(
-        title: 'خطأ في تحميل الملف',
-        description: 'الملف غير صالح أو غير مدعوم',
-      );
-      return;
-    }
-
     try {
-      await _audioPlayer.setUrl(filePath);
+      final filePath = await FileUtils.getItemFileFullPath(lesson, true);
+
+      if (filePath != null &&
+          filePath.isNotEmpty &&
+          filePath.endsWith('.mp3') &&
+          await FileUtils.isItemFileExists(lesson)) {
+        logger.i('Loading audio from: $filePath');
+        await _audioPlayer.setFilePath(filePath);
+      } else if (lesson.url != null && lesson.url!.isNotEmpty) {
+        logger.i('Loading audio from URL: ${lesson.url}');
+        await _audioPlayer.setUrl(lesson.url!);
+      } else {
+        _showError(
+          filePath == null
+              ? 'الملف غير موجود أو غير صالح يرجى حذف الملف وإعادة تحميله'
+              : 'خطأ في تحميل الملف: تحقق من الاتصال',
+        );
+        return;
+      }
+
+      // استرجاع آخر موضع محفوظ
+      final lastPositionMs = await UserItemStatusRepository.getLastPosition(
+        lesson.id,
+        ItemType.lesson,
+      );
+      logger.i('Last position for ${lesson.id}: $lastPositionMs ms');
+      if (lastPositionMs != null && lastPositionMs > 0) {
+        final lastPosition = Duration(milliseconds: lastPositionMs);
+        await _audioPlayer.seek(lastPosition);
+        setState(() {
+          _currentPosition = lastPosition;
+        });
+      } else {
+        await _audioPlayer.seek(Duration.zero);
+        setState(() {
+          _currentPosition = Duration.zero;
+        });
+      }
+
       setState(() {
         _isLoading = false;
         _hasError = false;
         _errorMessage = null;
       });
       _audioPlayer.play();
+      _isInitAudioRunning = false;
     } catch (e) {
       logger.e('Error loading audio file', error: e);
-      setState(() {
-        _isLoading = false;
-        _hasError = true;
-        _errorMessage =
-            'خطأ في تحميل الملف: تحقق من الاتصال أو الملف غير موجود';
-      });
-      AppToasts.showError(
-        title: 'خطأ في تحميل الملف',
-        description: 'تحقق من الاتصال أو الملف غير موجود',
-      );
+      _showError(e.toString());
     }
-    _isInitAudioRunning = false;
   }
 
   @override
@@ -124,6 +150,19 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
     } else {
       _audioPlayer.play();
     }
+  }
+
+  void _showError(String message) {
+    setState(() {
+      _isLoading = false;
+      _hasError = true;
+      _errorMessage = message;
+    });
+    AppToasts.showError(
+      title: 'خطأ في تشغيل الملف',
+      description: _errorMessage,
+    );
+    _isInitAudioRunning = false;
   }
 
   void _seekRelative(int seconds) {
@@ -169,37 +208,13 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
     );
   }
 
-  // /// إكمال/إلغاء إكمال الدرس
-  // Future<void> _toggleComplete(LessonModel lesson, int index) async {
-  //   final newValue = !lesson.isCompleted;
-  //   bool status = await UserItemStatusRepository.setCompleted(
-  //     lesson.id,
-  //     ItemType.lesson,
-  //     newValue,
-  //   );
-  //   if (status) {
-  //     setState(() {
-  //       widget.lessons[index] = lesson.copyWith(isCompleted: newValue);
-  //     });
-  //   }
-  // }
-
-  // /// إضافة/إزالة الدرس من المفضلة
-  // Future<void> _toggleFavorite(LessonModel lesson, int index) async {
-  //   final success = await UserItemStatusRepository.toggleFavorite(
-  //     lesson.id,
-  //     ItemType.lesson,
-  //   );
-  //   if (success) {
-  //     setState(() {
-  //       widget.lessons[index] = lesson.copyWith(isFavorite: !lesson.isFavorite);
-  //     });
-  //   }
-  // }
-
   // add bookmark
   Future<void> _addBookmark(LessonModel lesson) async {
-    await BookmarkDialog.showForLesson(context: context, lessonId: lesson.id);
+    await BookmarkDialog.showForLesson(
+      context: context,
+      lesson: lesson,
+      position: _currentPosition.inMilliseconds,
+    );
   }
 
   Future<void> _addNote() async {
@@ -245,52 +260,75 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
         body: SafeArea(
           child: Column(
             children: [
-              const SizedBox(height: 16),
-              ClipOval(
-                child: Image.asset(
-                  'assets/icons/app_icon.png',
-                  width: 120,
-                  height: 120,
-                  fit: BoxFit.scaleDown,
+              Expanded(
+                flex: 12,
+                child: Center(
+                  child: ClipOval(
+                    child: Image.asset(
+                      'assets/icons/app_icon.png',
+                      width: 120,
+                      height: 120,
+                      fit: BoxFit.scaleDown,
+                    ),
+                  ),
                 ),
               ),
-              const SizedBox(height: 24),
-              Text(
-                lesson.materialName ?? '',
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
+              Expanded(
+                flex: 10,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      '${lesson.materialName} (${lesson.lessonNumber})',
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    if (lesson.authorName != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        lesson.authorName!,
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Theme.of(context).colorScheme.outline,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ],
                 ),
-                textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 8),
-              Text(
-                lesson.lessonName,
-                style: const TextStyle(fontSize: 16, color: Colors.grey),
-                textAlign: TextAlign.center,
+              Expanded(
+                flex: 15,
+                child: AudioControls(
+                  currentPosition: _currentPosition,
+                  duration: _duration,
+                  isPlaying: _isPlaying,
+                  onPlayPause: _playPause,
+                  onNext: _nextLesson,
+                  onPrev: _prevLesson,
+                  onForward: () => _seekRelative(10),
+                  onRewind: () => _seekRelative(-10),
+                  onSeek:
+                      (val) =>
+                          _audioPlayer.seek(Duration(seconds: val.toInt())),
+                  isLoading: _isLoading,
+                  hasError: _hasError,
+                  onRetry: _initAudio,
+                  errorMessage: _errorMessage,
+                ),
               ),
-              const SizedBox(height: 24),
-              AudioControls(
-                currentPosition: _currentPosition,
-                duration: _duration,
-                isPlaying: _isPlaying,
-                onPlayPause: _playPause,
-                onNext: _nextLesson,
-                onPrev: _prevLesson,
-                onForward: () => _seekRelative(10),
-                onRewind: () => _seekRelative(-10),
-                onSeek:
-                    (val) => _audioPlayer.seek(Duration(seconds: val.toInt())),
-                isLoading: _isLoading,
-                hasError: _hasError,
-                onRetry: _initAudio,
-                errorMessage: _errorMessage,
+              Expanded(
+                flex: 6,
+                child: Center(
+                  child: _buildPlayerActions(lesson, _currentIndex),
+                ),
               ),
-              const SizedBox(height: 16),
-              _buildPlayerActions(lesson, _currentIndex),
-              const SizedBox(height: 16),
-              // هذا هو الجزء المهم: Expanded حول قائمة الدروس فقط
-              Expanded(child: _buildPlaylistWidget()),
+
+              Expanded(flex: 40, child: _buildPlaylistWidget()),
             ],
           ),
         ),
@@ -305,8 +343,9 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
     }
   }
 
-  Expanded _buildPlaylistWidget() {
-    return Expanded(
+  Widget _buildPlaylistWidget() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 6),
       child: ListView.builder(
         itemCount: widget.lessons.length,
         itemBuilder: (context, idx) {
@@ -314,16 +353,26 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
           final isCurrent = idx == _currentIndex;
           return ListTile(
             title: Text(l.lessonName),
-            subtitle: Text(l.authorName ?? ''),
+            subtitle: Text(l.materialName ?? ''),
             leading:
                 isCurrent
-                    ? const Icon(Icons.play_arrow, color: Colors.teal)
-                    : const Icon(Icons.music_note),
+                    ? Icon(Ionicons.play, color: Colors.teal)
+                    : const Icon(Ionicons.ios_musical_notes),
             selected: isCurrent,
             onTap: () => _navigateToLesson(idx),
           );
         },
       ),
+    );
+  }
+
+  Future<void> _saveLastPosition(Duration position) async {
+    logger.i('Saving last position: ${position.inMilliseconds}');
+    final lesson = widget.lessons[_currentIndex];
+    await UserItemStatusRepository.saveLastPosition(
+      lesson.id,
+      ItemType.lesson,
+      position.inMilliseconds,
     );
   }
 
