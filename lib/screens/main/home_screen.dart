@@ -1,8 +1,6 @@
 import 'package:alqayimm_app_flutter/main.dart';
-import 'package:alqayimm_app_flutter/downloader/download_provider.dart';
 import 'package:alqayimm_app_flutter/screens/bookmarks/all_notes_page.dart';
 import 'package:alqayimm_app_flutter/screens/bookmarks/bookmarks_screen.dart';
-import 'package:alqayimm_app_flutter/screens/downloads/downloads_screen.dart';
 import 'package:alqayimm_app_flutter/screens/main/institute_screen.dart';
 import 'package:alqayimm_app_flutter/screens/main/search_screen.dart';
 import 'package:alqayimm_app_flutter/screens/main/shik_screen.dart';
@@ -13,12 +11,10 @@ import 'package:alqayimm_app_flutter/screens/user/user_settings_screen.dart';
 import 'package:alqayimm_app_flutter/theme/util.dart' as util;
 import 'package:alqayimm_app_flutter/widgets/download/download_progress_indicator.dart';
 import 'package:alqayimm_app_flutter/widgets/main_bottom_nav_bar.dart';
-import 'package:badges/badges.dart' as badges;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:provider/provider.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});

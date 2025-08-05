@@ -1,16 +1,22 @@
+import 'package:alqayimm_app_flutter/db/enums.dart';
 import 'package:alqayimm_app_flutter/db/main/models/base_content_model.dart';
 import 'package:alqayimm_app_flutter/db/user/db_constants.dart';
 import 'package:alqayimm_app_flutter/db/user/repos/user_item_status_repository.dart';
+import 'package:alqayimm_app_flutter/downloader/download_provider.dart';
 import 'package:alqayimm_app_flutter/main.dart';
 import 'package:alqayimm_app_flutter/screens/player/audio_controls.dart';
 import 'package:alqayimm_app_flutter/utils/file_utils.dart';
+import 'package:alqayimm_app_flutter/utils/network_utils.dart';
+import 'package:alqayimm_app_flutter/utils/preferences_utils.dart';
 import 'package:alqayimm_app_flutter/widgets/bottom_sheets/speed_slider_bottom_sheet.dart';
 import 'package:alqayimm_app_flutter/widgets/dialogs/bookmark_dialog.dart';
 import 'package:alqayimm_app_flutter/widgets/dialogs/note_dialog.dart';
 import 'package:alqayimm_app_flutter/widgets/toasts.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
+import 'package:http/http.dart' as http;
 import 'package:just_audio/just_audio.dart';
+import 'package:provider/provider.dart';
 
 class AudioPlayerScreen extends StatefulWidget {
   final List<LessonModel> lessons;
@@ -78,31 +84,51 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
     if (_isInitAudioRunning) return;
     _isInitAudioRunning = true;
 
+    final downloadProvider = Provider.of<DownloadProvider>(
+      context,
+      listen: false,
+    );
+
     setState(() {
       _isLoading = true;
       _hasError = false;
       _errorMessage = null;
     });
+
+    await _audioPlayer.stop();
+
     final lesson = widget.lessons[_currentIndex];
     try {
-      final filePath = await FileUtils.getItemFileFullPath(lesson, true);
+      final isFileDownloaded =
+          downloadProvider.getDownloadStatus(lesson) ==
+          DownloadStatus.downloaded;
 
-      if (filePath != null &&
-          filePath.isNotEmpty &&
-          filePath.endsWith('.mp3') &&
-          await FileUtils.isItemFileExists(lesson)) {
-        logger.i('Loading audio from: $filePath');
+      if (isFileDownloaded) {
+        final fileExists = await FileUtils.isItemFileExists(lesson);
+        if (!fileExists) {
+          throw Exception('الملف غير موجود يرجى إعادة تنزيله');
+        }
+        final filePath = await FileUtils.getItemFileFullPath(lesson, true);
+
+        if (filePath == null || !filePath.endsWith('.mp3')) {
+          throw Exception('الملف غير صالح أو غير متاح');
+        }
+
         await _audioPlayer.setFilePath(filePath);
       } else if (lesson.url != null && lesson.url!.isNotEmpty) {
-        logger.i('Loading audio from URL: ${lesson.url}');
+        final isWifiOnly = PreferencesUtils.requireWiFi;
+        final isNetworkAvailable = await NetworkUtils.checkConnectionType(
+          isWifiOnly: isWifiOnly,
+          url: lesson.url!,
+        );
+        if (!isNetworkAvailable.canProceed) {
+          throw Exception(isNetworkAvailable.message);
+        }
         await _audioPlayer.setUrl(lesson.url!);
       } else {
-        _showError(
-          filePath == null
-              ? 'الملف غير موجود أو غير صالح يرجى حذف الملف وإعادة تحميله'
-              : 'خطأ في تحميل الملف: تحقق من الاتصال',
+        throw Exception(
+          'لا يمكن تشغيل هذا الدرس ربما يكون الملف غير صالح أو أنك غير متصل بلإنترنت',
         );
-        return;
       }
 
       // استرجاع آخر موضع محفوظ
@@ -403,13 +429,6 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
           icon: Icons.bookmark_add_outlined,
           onPressed: () => _addBookmark(lesson),
           tooltip: 'إضافة إشارة مرجعية',
-        ),
-        iconButton(
-          icon: Icons.download_outlined,
-          onPressed: () {
-            // TODO: Implement download functionality
-          },
-          tooltip: 'تحميل',
         ),
         iconButton(
           icon: Icons.speed,

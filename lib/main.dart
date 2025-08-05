@@ -62,6 +62,7 @@ class MyApp extends StatelessWidget {
     MaterialTheme theme = MaterialTheme(textTheme);
 
     return ToastificationWrapper(
+      config: ToastificationConfig(maxToastLimit: 2),
       child: ValueListenableBuilder<ThemeMode>(
         valueListenable: themeModeNotifier,
         builder: (context, mode, _) {

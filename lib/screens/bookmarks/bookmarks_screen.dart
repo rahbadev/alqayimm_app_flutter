@@ -1,4 +1,4 @@
-import 'package:alqayimm_app_flutter/screens/reader/pdf_viewer_screen_final.dart';
+import 'package:alqayimm_app_flutter/screens/reader/pdf_viewer_screen.dart';
 import 'package:alqayimm_app_flutter/widgets/toasts.dart';
 import 'package:flutter/material.dart';
 import 'package:alqayimm_app_flutter/db/user/models/user_bookmark_model.dart';

@@ -4,7 +4,7 @@ import 'package:alqayimm_app_flutter/db/user/models/user_item_state_model.dart';
 import 'package:alqayimm_app_flutter/downloader/download_task_model.dart';
 import 'package:alqayimm_app_flutter/main.dart';
 import 'package:alqayimm_app_flutter/downloader/download_provider.dart';
-import 'package:alqayimm_app_flutter/screens/reader/pdf_viewer_screen_final.dart';
+import 'package:alqayimm_app_flutter/screens/reader/pdf_viewer_screen.dart';
 import 'package:alqayimm_app_flutter/widgets/buttons/items_icon_buttons.dart';
 import 'package:alqayimm_app_flutter/widgets/dialogs/custom_alert_dialog.dart';
 import 'package:alqayimm_app_flutter/widgets/download/download_progress_indicator.dart';

@@ -7,7 +7,6 @@ import 'package:alqayimm_app_flutter/downloader/download_manager.dart';
 import 'package:alqayimm_app_flutter/utils/file_utils.dart';
 import 'package:alqayimm_app_flutter/utils/network_utils.dart';
 import 'package:alqayimm_app_flutter/utils/preferences_utils.dart';
-import 'package:alqayimm_app_flutter/widgets/dialogs/wifi_warning_dialog.dart';
 import 'package:alqayimm_app_flutter/widgets/toasts.dart';
 import 'package:background_downloader/background_downloader.dart';
 import 'package:flutter/material.dart';
@@ -181,46 +180,23 @@ class DownloadProvider extends ChangeNotifier {
     // التحقق من نوع الاتصال
     final canProceed = await _checkConnectionAndWarn(context);
 
-    // // التحقق من توفر المساحة
-    // final hasSpace = await _checkAvailableSpace(item);
-    // if (!hasSpace) return false;
-
     return canProceed;
   }
 
   /// التحقق من نوع الاتصال قبل بدء التنزيل
   Future<bool> _checkConnectionAndWarn(BuildContext context) async {
-    final connectionResult = await NetworkUtils.checkConnectionType();
+    final isWifiOnly = PreferencesUtils.requireWiFi;
+    final connectionResult = await NetworkUtils.checkConnectionType(
+      isWifiOnly: isWifiOnly,
+    );
 
-    // إذا لا يمكن المتابعة لأي سبب (لا يوجد اتصال أو تحذير بيانات)
     if (!connectionResult.canProceed) {
-      // إذا كان هناك تحذير بيانات الجوال، أظهر التحذير
-      if (connectionResult.showWifiWarning && context.mounted) {
-        final shouldProceed = await showWifiWarningDialog(context);
-        if (shouldProceed == null || !shouldProceed) {
-          return false;
-        } else {
-          AppToasts.showError(description: connectionResult.message);
-          return false;
-        }
-      }
-      // إذا لا يوجد اتصال فعلي أو أي سبب آخر
       AppToasts.showError(
         description: connectionResult.message ?? 'لا يوجد اتصال بالإنترنت',
       );
       return false;
     }
 
-    return true;
-  }
-
-  /// التحقق من توفر المساحة قبل بدء التنزيل
-  Future<bool> _checkAvailableSpace(BaseContentModel item) async {
-    final spaceResult = await FileUtils.checkAvailableSpace(item);
-    if (!spaceResult.hasEnoughSpace) {
-      AppToasts.showError(description: 'لا يوجد مساحة كافية للتنزيل');
-      return false;
-    }
     return true;
   }
 
