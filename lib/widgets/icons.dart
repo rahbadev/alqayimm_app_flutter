@@ -40,6 +40,10 @@ class AppIcons {
   static const notesShrp = MaterialCommunityIcons.note_edit;
   static const notesOutline = MaterialCommunityIcons.note_edit_outline;
   static const warning = Ionicons.md_warning_outline;
+
+  static const addBookmark = Icons.bookmark_add_outlined;
+  static const speed = Icons.speed_outlined;
+  static const addNote = Icons.note_add_outlined;
 }
 
 /// ودجيت أيقونة داخل Card مع خيارات متعددة للتخصيص

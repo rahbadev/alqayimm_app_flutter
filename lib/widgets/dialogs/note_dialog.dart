@@ -99,7 +99,7 @@ class _NoteDialogState extends State<NoteDialog> {
     if (_addSourceToEndNote &&
         widget.source != null &&
         widget.source!.isNotEmpty) {
-      content += "\n${widget.source}";
+      content += "\n \n${widget.source}";
     }
 
     final note = UserNoteModel(
@@ -206,8 +206,10 @@ class _NoteDialogState extends State<NoteDialog> {
                 const SizedBox(height: 24),
                 // Tags Section
                 _buildTagsSection(),
-                const SizedBox(height: 24),
-                _buildOptionsSection(),
+                if (widget.source != null) ...[
+                  const SizedBox(height: 24),
+                  _buildOptionsSection(),
+                ],
               ],
             ),
           ),

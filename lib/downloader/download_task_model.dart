@@ -1,5 +1,4 @@
 import 'package:alqayimm_app_flutter/db/enums.dart';
-import 'package:alqayimm_app_flutter/db/main/models/base_content_model.dart';
 import 'package:alqayimm_app_flutter/db/user/db_constants.dart';
 import 'package:background_downloader/background_downloader.dart';
 

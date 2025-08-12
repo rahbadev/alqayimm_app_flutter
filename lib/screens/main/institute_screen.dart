@@ -150,10 +150,7 @@ class InstituteScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MainItemsListView<MainItem>(
-      itemsFuture: _fetchMainItems(context),
-      itemBuilder: (item, index) => item,
-    );
+    return MainItemsFuture(itemsFuture: _fetchMainItems(context));
   }
 }
 

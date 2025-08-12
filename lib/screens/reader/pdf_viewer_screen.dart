@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:alqayimm_app_flutter/db/enums.dart';
 import 'package:alqayimm_app_flutter/db/user/db_constants.dart';
@@ -17,16 +16,16 @@ import 'package:alqayimm_app_flutter/widgets/dialogs/bookmark_dialog.dart';
 import 'package:alqayimm_app_flutter/widgets/dialogs/note_dialog.dart';
 import 'package:provider/provider.dart';
 
-class PdfViewerScreenFinal extends StatefulWidget {
+class PdfViewerScreen extends StatefulWidget {
   final BookModel book;
 
-  const PdfViewerScreenFinal({super.key, required this.book});
+  const PdfViewerScreen({super.key, required this.book});
 
   @override
-  State<PdfViewerScreenFinal> createState() => _PdfViewerScreenFinalState();
+  State<PdfViewerScreen> createState() => _PdfViewerScreenState();
 }
 
-class _PdfViewerScreenFinalState extends State<PdfViewerScreenFinal>
+class _PdfViewerScreenState extends State<PdfViewerScreen>
     with WidgetsBindingObserver {
   final documentRef = ValueNotifier<PdfDocumentRef?>(null);
   final controller = PdfViewerController();
@@ -113,9 +112,9 @@ class _PdfViewerScreenFinalState extends State<PdfViewerScreenFinal>
         );
       }
 
-      // setState(() {
-      //   _isLoading = false;
-      // });
+      setState(() {
+        _isLoading = false;
+      });
     } catch (e) {
       setState(() {
         _isLoading = false;
@@ -343,11 +342,6 @@ class _PdfViewerScreenFinalState extends State<PdfViewerScreenFinal>
       },
 
       loadingBannerBuilder: (context, bytesDownloaded, totalBytes) {
-        if (!_isLoading) {
-          setState(() {
-            _isLoading = true;
-          });
-        }
         return _buildLoadingScreen(
           bytesDownloaded: bytesDownloaded,
           totalBytes: totalBytes,

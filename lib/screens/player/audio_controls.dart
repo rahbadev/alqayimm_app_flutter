@@ -69,15 +69,15 @@ class AudioControls extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           textDirection: TextDirection.rtl,
           children: [
-            _buildControllIconButton(Icons.skip_next, onPrev),
-            _buildControllIconButton(Icons.forward_10, onRewind),
+            _buildControllIconButton(Icons.skip_next_rounded, onPrev),
+            _buildControllIconButton(Icons.forward_10_rounded, onRewind),
             SizedBox(
               width: 60,
               height: 60,
               child: Center(child: _buildPlayPauseButton(context)),
             ),
-            _buildControllIconButton(Icons.replay_10, onForward),
-            _buildControllIconButton(Icons.skip_previous, onNext),
+            _buildControllIconButton(Icons.replay_10_rounded, onForward),
+            _buildControllIconButton(Icons.skip_previous_rounded, onNext),
           ],
         ),
       ],
@@ -102,11 +102,11 @@ class AudioControls extends StatelessWidget {
           hasError
               ? Icons.refresh_rounded
               : isPlaying
-              ? Icons.pause
-              : Icons.play_arrow,
+              ? Icons.pause_rounded
+              : Icons.play_arrow_rounded,
         ),
         highlightColor: hasError ? Colors.red : null,
-        iconSize: iconSize / 1.3, // حجم الأيقونة فقط هنا
+        iconSize: iconSize / 1.3,
         padding: EdgeInsets.zero,
         onPressed: hasError ? onRetry : onPlayPause,
         tooltip:

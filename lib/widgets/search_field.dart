@@ -5,7 +5,7 @@ import 'text_fileds.dart';
 /// يوفر تصميم موحد لشرائط البحث مع إمكانية التخصيص
 class SearchField extends StatelessWidget {
   /// متحكم النص
-  final TextEditingController? controller;
+  final TextEditingController controller;
 
   /// النص التوضيحي
   final String hintText;
@@ -42,12 +42,12 @@ class SearchField extends StatelessWidget {
 
   const SearchField({
     super.key,
-    this.controller,
-    this.hintText = 'البحث...',
+    required this.controller,
+    required this.hintText,
+    required this.onChanged,
     this.label,
     this.icon = Icons.search_rounded,
     this.clearIcon = Icons.clear_rounded,
-    this.onChanged,
     this.onSubmitted,
     this.onClear,
     this.showClearButton = true,
@@ -56,62 +56,20 @@ class SearchField extends StatelessWidget {
     this.textInputAction = TextInputAction.search,
   });
 
-  /// مُنشئ لشريط البحث العادي
-  const SearchField.standard({
-    super.key,
-    this.controller,
-    this.onChanged,
-    this.onSubmitted,
-    this.onClear,
-  }) : hintText = 'البحث...',
-       label = 'بحث',
-       icon = Icons.search_rounded,
-       clearIcon = Icons.clear_rounded,
-       showClearButton = true,
-       autofocus = false,
-       keyboardType = TextInputType.text,
-       textInputAction = TextInputAction.search;
-
-  /// مُنشئ لشريط بحث الملاحظات
-  const SearchField.notes({
-    super.key,
-    this.controller,
-    this.onChanged,
-    this.onSubmitted,
-    this.onClear,
-  }) : hintText = 'ابحث في الملاحظات...',
-       label = 'بحث في الملاحظات',
-       icon = Icons.search_rounded,
-       clearIcon = Icons.clear_rounded,
-       showClearButton = true,
-       autofocus = false,
-       keyboardType = TextInputType.text,
-       textInputAction = TextInputAction.search;
-
-  /// مُنشئ لشريط بحث العلامات
-  const SearchField.tags({
-    super.key,
-    this.controller,
-    this.onChanged,
-    this.onSubmitted,
-    this.onClear,
-  }) : hintText = 'ابحث في العلامات...',
-       label = 'بحث في العلامات',
-       icon = Icons.local_offer_rounded,
-       clearIcon = Icons.clear_rounded,
-       showClearButton = true,
-       autofocus = false,
-       keyboardType = TextInputType.text,
-       textInputAction = TextInputAction.search;
-
   @override
   Widget build(BuildContext context) {
-    return CustomTextField(
-      controller: controller ?? TextEditingController(),
-      label: label ?? 'بحث',
-      hint: hintText,
-      icon: icon,
-      onFieldSubmitted: onSubmitted,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: CustomTextField(
+        controller: controller,
+        label: label ?? hintText,
+        hint: hintText,
+        icon: icon,
+        showClearButton: showClearButton,
+        onFieldSubmitted: onSubmitted,
+        onChanged: onChanged,
+        onClear: onClear,
+      ),
     );
   }
 }

@@ -91,6 +91,15 @@ class BookmarkDialog extends StatefulWidget {
   State<BookmarkDialog> createState() => _BookmarkDialogState();
 }
 
+String getDisplayPosition(ItemType type, int position) {
+  if (type == ItemType.lesson) {
+    // تحويل ميلي ثانية إلى وقت
+    return AudioControls.formatDuration(Duration(milliseconds: position));
+  } else {
+    return 'الصفحة: $position';
+  }
+}
+
 class _BookmarkDialogState extends State<BookmarkDialog> {
   late final TextEditingController _titleController;
   late final TextEditingController _positionController;
@@ -102,12 +111,7 @@ class _BookmarkDialogState extends State<BookmarkDialog> {
     super.initState();
     _titleController = TextEditingController(text: widget.title ?? '');
     _positionController = TextEditingController(
-      text:
-          widget.itemType == ItemType.lesson
-              ? AudioControls.formatDuration(
-                Duration(milliseconds: widget.position),
-              )
-              : 'الصفحة: ${widget.position}',
+      text: getDisplayPosition(widget.itemType, widget.position),
     );
   }
 
@@ -174,16 +178,18 @@ class _BookmarkDialogState extends State<BookmarkDialog> {
 
     try {
       final title = _titleController.text.trim();
-      final positionText = _positionController.text.trim();
-      final position =
-          positionText.isEmpty ? 0 : int.tryParse(positionText) ?? 0;
+      final position = widget.position;
       final now = DateTime.now();
+
+      logger.d(
+        'Saving bookmark: id=${widget.id}, itemId=${widget.itemId}, itemType=${widget.itemType}, position=$position, title=$title, createdAt=${now.toIso8601String()} , isEditing=${widget.isEditing}',
+      );
 
       if (widget.isEditing) {
         // تحديث علامة مرجعية موجودة
         final updatedBookmark = UserBookmarkModel(
           id: widget.id!,
-          itemId: widget.id!,
+          itemId: widget.itemId,
           itemType: widget.itemType,
           position: position,
           title: title,
@@ -194,7 +200,7 @@ class _BookmarkDialogState extends State<BookmarkDialog> {
         // إضافة علامة مرجعية جديدة
         final newBookmark = UserBookmarkModel(
           id: 0,
-          itemId: widget.id!,
+          itemId: widget.itemId,
           itemType: widget.itemType,
           position: position,
           title: title,

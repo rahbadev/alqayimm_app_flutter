@@ -8,10 +8,8 @@ import 'package:alqayimm_app_flutter/screens/main/website_screen.dart';
 import 'package:alqayimm_app_flutter/screens/settings/settings_screen.dart';
 import 'package:alqayimm_app_flutter/screens/user/favorites_screen.dart';
 import 'package:alqayimm_app_flutter/screens/user/user_settings_screen.dart';
-import 'package:alqayimm_app_flutter/theme/util.dart' as util;
-import 'package:alqayimm_app_flutter/widgets/download/download_progress_indicator.dart';
+import 'package:alqayimm_app_flutter/widgets/app_bar.dart';
 import 'package:alqayimm_app_flutter/widgets/main_bottom_nav_bar.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -149,37 +147,19 @@ class _MyHomePageState extends State<MyHomePage> {
         await SystemNavigator.pop();
       },
       child: Scaffold(
-        appBar: AppBar(
-          centerTitle: true,
-          leading: IconButton(
-            icon: const Icon(Icons.menu),
-            tooltip: 'المزيد',
-            onPressed: () {
-              _showMoreOptions(context);
-            },
-          ),
-          title: Text(
-            widget.title,
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
+        appBar: AppBarWidget(
+          title: widget.title,
+          showDownloadIndicator: ShowDownloadProgress.onDownloading,
+          onPressMoreLeadingIcon: () {
+            _showMoreOptions(context);
+          },
           actions: [
-            // زر التنزيلات مع badge
-            DownloadProgressIndicator(),
             if (_selectedIndex == 1)
               IconButton(
                 icon: const Icon(Icons.refresh),
                 onPressed: () {
                   siteScreenKey.currentState?.reloadWebView();
                 },
-              ),
-            if (kDebugMode)
-              IconButton(
-                icon: const Icon(Icons.nightlight),
-                onPressed: () {
-                  util.toggleThemeMode();
-                },
-                tooltip: 'الإعدادات',
               ),
           ],
         ),

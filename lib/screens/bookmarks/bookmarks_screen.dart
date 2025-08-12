@@ -1,4 +1,9 @@
 import 'package:alqayimm_app_flutter/screens/reader/pdf_viewer_screen.dart';
+import 'package:alqayimm_app_flutter/widgets/dialogs/empty_list_screen.dart';
+import 'package:alqayimm_app_flutter/widgets/filter_chip.dart';
+import 'package:alqayimm_app_flutter/widgets/filter_search_bar.dart';
+import 'package:alqayimm_app_flutter/widgets/search_field.dart';
+import 'package:alqayimm_app_flutter/widgets/sort_by_icon.dart';
 import 'package:alqayimm_app_flutter/widgets/toasts.dart';
 import 'package:flutter/material.dart';
 import 'package:alqayimm_app_flutter/db/user/models/user_bookmark_model.dart';
@@ -7,8 +12,6 @@ import 'package:alqayimm_app_flutter/db/user/db_constants.dart';
 import 'package:alqayimm_app_flutter/db/main/repo.dart';
 import 'package:alqayimm_app_flutter/db/main/db_helper.dart';
 import 'package:alqayimm_app_flutter/screens/player/audio_player_screen.dart';
-import 'package:alqayimm_app_flutter/widgets/search_field.dart';
-
 import 'package:alqayimm_app_flutter/widgets/dialogs/custom_alert_dialog.dart';
 import 'package:alqayimm_app_flutter/widgets/dialogs/bookmark_dialog.dart';
 
@@ -20,11 +23,18 @@ class BookmarksScreen extends StatefulWidget {
 }
 
 class _BookmarksScreenState extends State<BookmarksScreen> {
-  List<UserBookmarkModel> _bookmarks = [];
+  final _searchController = TextEditingController();
+  List<UserBookmarkModel> _allBookmarks = [];
+  List<UserBookmarkModel> _filteredBookmarks = [];
+  int _selectedFilterIndex = 0;
+  SortBy _sortBy = SortBy.dateDesc;
   bool _isLoading = true;
-  String? _searchQuery;
-  ItemType? _selectedItemType;
-  String _sortBy = 'date_desc';
+
+  List<FilterChipItem> get _filtersChips => [
+    ("الكل", _selectedFilterIndex == 0, Icons.all_inclusive),
+    ("الكتب", _selectedFilterIndex == 1, Icons.book),
+    ("الدروس", _selectedFilterIndex == 2, Icons.headphones),
+  ];
 
   @override
   void initState() {
@@ -32,62 +42,47 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
     _loadBookmarks();
   }
 
-  Future<void> _loadBookmarks() async {
-    setState(() {
-      _isLoading = true;
-    });
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
+  Future<void> _loadBookmarks() async {
+    setState(() => _isLoading = true);
     try {
-      final bookmarks = await BookmarksRepository.getAllBookmarks(
-        searchQuery: _searchQuery,
-        itemTypeFilter: _selectedItemType,
-        orderBy: _getSortOrderBy(),
-      );
+      final bookmarks = await BookmarksRepository.getAllBookmarks();
 
       setState(() {
-        _bookmarks = bookmarks;
+        _allBookmarks = bookmarks;
         _isLoading = false;
       });
+      updateFilteredBookmarks();
     } catch (e) {
       setState(() {
-        _bookmarks = [];
+        _allBookmarks = [];
         _isLoading = false;
       });
     }
   }
 
-  String _getSortOrderBy() {
-    switch (_sortBy) {
-      case 'date_asc':
-        return '${UserBookmarkFields.createdAt} ASC';
-      case 'title_asc':
-        return '${UserBookmarkFields.title} ASC';
-      case 'title_desc':
-        return '${UserBookmarkFields.title} DESC';
-      case 'date_desc':
-      default:
-        return '${UserBookmarkFields.createdAt} DESC';
-    }
-  }
-
-  Future<void> _deleteBookmark(int id) async {
-    final confirmed = await showWarningDialog(
-      context: context,
-      title: 'حذف العلامة المرجعية',
-      subtitle: 'هل تريد حقاً حذف هذه العلامة المرجعية؟',
-      confirmText: 'نعم',
-      cancelText: 'تراجع',
-    );
-
-    if (confirmed == true) {
-      final success = await BookmarksRepository.deleteBookmark(id);
-      if (success) {
-        setState(() {
-          _bookmarks.removeWhere((bookmark) => bookmark.id == id);
-        });
-        AppToasts.showSuccess(description: 'تم حذف العلامة المرجعية بنجاح');
-      }
-    }
+  void updateFilteredBookmarks() {
+    final searchQuery = _searchController.text.toLowerCase();
+    setState(() {
+      _filteredBookmarks =
+          _allBookmarks.where((bookmark) {
+            final matchesSearch = bookmark.title.toLowerCase().contains(
+              searchQuery,
+            );
+            final matchesFilter =
+                _selectedFilterIndex == 0 ||
+                (_selectedFilterIndex == 1 &&
+                    bookmark.itemType == ItemType.book) ||
+                (_selectedFilterIndex == 2 &&
+                    bookmark.itemType == ItemType.lesson);
+            return matchesSearch && matchesFilter;
+          }).toList();
+    });
   }
 
   Future<void> _navigateToItem(UserBookmarkModel bookmark) async {
@@ -98,315 +93,44 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
       if (bookmark.itemType == ItemType.lesson) {
         final lesson = await repo.getLessonById(bookmark.itemId);
         if (lesson != null && mounted) {
-          // جلب جميع دروس نفس المادة
           final lessonsList = await repo.fetchLessons(
             materialId: lesson.materialId,
           );
-
-          // تحديد موقع الدرس في القائمة
           final index = lessonsList.indexWhere((l) => l.id == lesson.id);
-
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder:
-                  (_) => AudioPlayerScreen(
-                    lessons: lessonsList,
-                    initialIndex: index >= 0 ? index : 0,
-                  ),
-            ),
-          );
+          AudioPlayerScreen.navigateTo(context, lessonsList, index);
         }
       } else if (bookmark.itemType == ItemType.book) {
         final book = await repo.getBookById(bookmark.itemId);
-        // TODO Fix
         if (book != null && mounted) {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => PdfViewerScreenFinal(book: book)),
+            MaterialPageRoute(builder: (_) => PdfViewerScreen(book: book)),
           );
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('حدث خطأ في فتح العنصر')));
+        AppToasts.showError(description: 'حدث خطأ في فتح العنصر');
       }
     }
   }
 
-  Widget _buildItemTypeIcon(ItemType? type) {
-    switch (type) {
-      case ItemType.lesson:
-        return const Icon(Icons.headphones, color: Colors.blue);
-      case ItemType.book:
-        return const Icon(Icons.book, color: Colors.green);
-      default:
-        return const Icon(Icons.bookmark, color: Colors.grey);
-    }
-  }
-
-  String _getItemTypeName(ItemType type) {
-    switch (type) {
-      case ItemType.lesson:
-        return 'درس';
-      case ItemType.book:
-        return 'كتاب';
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('العلامات المرجعية'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.sort),
-            onPressed: _showSortOptions,
-            tooltip: 'ترتيب',
-          ),
-          IconButton(
-            icon: const Icon(Icons.filter_list),
-            onPressed: _showFilterOptions,
-            tooltip: 'تصفية',
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: SearchField(
-              onSubmitted: (query) {
-                setState(() {
-                  _searchQuery = query.isNotEmpty ? query : null;
-                });
-                _loadBookmarks();
-              },
-              hintText: 'بحث في العلامات المرجعية...',
-            ),
-          ),
-          if (_selectedItemType != null)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0),
-              child: Row(
-                children: [
-                  // Filter chip
-                  Chip(
-                    label: Text(
-                      'النوع: ${_getItemTypeName(_selectedItemType!)}',
-                    ),
-                    deleteIcon: const Icon(Icons.close),
-                    onDeleted: () {
-                      setState(() {
-                        _selectedItemType = null;
-                      });
-                      _loadBookmarks();
-                    },
-                  ),
-                  const Spacer(),
-                  Text('${_bookmarks.length} عنصر'),
-                ],
-              ),
-            ),
-          Expanded(
-            child:
-                _isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : _bookmarks.isEmpty
-                    ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            Icons.bookmark_border,
-                            size: 64,
-                            color: Colors.grey,
-                          ),
-                          const SizedBox(height: 16),
-                          const Text('لا توجد علامات مرجعية'),
-                          if (_searchQuery != null || _selectedItemType != null)
-                            TextButton(
-                              onPressed: () {
-                                setState(() {
-                                  _searchQuery = null;
-                                  _selectedItemType = null;
-                                });
-                                _loadBookmarks();
-                              },
-                              child: const Text('إزالة التصفية'),
-                            ),
-                        ],
-                      ),
-                    )
-                    : ListView.builder(
-                      itemCount: _bookmarks.length,
-                      itemBuilder: (context, index) {
-                        final bookmark = _bookmarks[index];
-                        return Dismissible(
-                          key: Key('bookmark_${bookmark.id}'),
-                          background: Container(
-                            color: Colors.red,
-                            alignment: Alignment.centerRight,
-                            padding: const EdgeInsets.only(right: 20),
-                            child: const Icon(
-                              Icons.delete,
-                              color: Colors.white,
-                            ),
-                          ),
-                          direction: DismissDirection.endToStart,
-                          onDismissed: (_) => _deleteBookmark(bookmark.id),
-                          confirmDismiss: (_) async {
-                            return await showWarningDialog(
-                                  context: context,
-                                  title: 'حذف العلامة المرجعية',
-                                  subtitle:
-                                      'هل تريد حقاً حذف هذه العلامة المرجعية؟',
-                                  confirmText: 'نعم',
-                                  cancelText: 'تراجع',
-                                ) ??
-                                false;
-                          },
-                          child: ListTile(
-                            leading: _buildItemTypeIcon(bookmark.itemType),
-                            title: Text(bookmark.title),
-                            subtitle:
-                                bookmark.position != null
-                                    ? Text(
-                                      '${_getItemTypeName(bookmark.itemType)} - الموضع: ${bookmark.position}',
-                                    )
-                                    : Text(_getItemTypeName(bookmark.itemType)),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.edit),
-                                  onPressed: () => _editBookmark(bookmark),
-                                  tooltip: 'تعديل',
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.delete),
-                                  onPressed: () => _deleteBookmark(bookmark.id),
-                                  tooltip: 'حذف',
-                                ),
-                              ],
-                            ),
-                            onTap: () => _navigateToItem(bookmark),
-                          ),
-                        );
-                      },
-                    ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showFilterOptions() {
-    showModalBottomSheet(
+  Future<void> _deleteBookmark(UserBookmarkModel bookmark) async {
+    final confirmed = await showWarningDialog(
       context: context,
-      builder:
-          (context) => Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                title: const Text('جميع العلامات المرجعية'),
-                leading: const Icon(Icons.all_inclusive),
-                onTap: () {
-                  Navigator.pop(context);
-                  setState(() {
-                    _selectedItemType = null;
-                  });
-                  _loadBookmarks();
-                },
-              ),
-              ListTile(
-                title: const Text('الدروس فقط'),
-                leading: const Icon(Icons.headphones),
-                onTap: () {
-                  Navigator.pop(context);
-                  setState(() {
-                    _selectedItemType = ItemType.lesson;
-                  });
-                  _loadBookmarks();
-                },
-              ),
-              ListTile(
-                title: const Text('الكتب فقط'),
-                leading: const Icon(Icons.book),
-                onTap: () {
-                  Navigator.pop(context);
-                  setState(() {
-                    _selectedItemType = ItemType.book;
-                  });
-                  _loadBookmarks();
-                },
-              ),
-            ],
-          ),
+      title: 'حذف العلامة المرجعية',
+      subtitle: 'هل تريد حقاً حذف "${bookmark.title}"؟',
+      confirmText: 'حذف',
+      cancelText: 'إلغاء',
     );
-  }
 
-  void _showSortOptions() {
-    showModalBottomSheet(
-      context: context,
-      builder:
-          (context) => Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                title: const Text('الأحدث أولاً'),
-                leading: const Icon(Icons.arrow_downward),
-                selected: _sortBy == 'date_desc',
-                onTap: () {
-                  Navigator.pop(context);
-                  setState(() {
-                    _sortBy = 'date_desc';
-                  });
-                  _loadBookmarks();
-                },
-              ),
-              ListTile(
-                title: const Text('الأقدم أولاً'),
-                leading: const Icon(Icons.arrow_upward),
-                selected: _sortBy == 'date_asc',
-                onTap: () {
-                  Navigator.pop(context);
-                  setState(() {
-                    _sortBy = 'date_asc';
-                  });
-                  _loadBookmarks();
-                },
-              ),
-              ListTile(
-                title: const Text('العنوان: أ-ي'),
-                leading: const Icon(Icons.sort_by_alpha),
-                selected: _sortBy == 'title_asc',
-                onTap: () {
-                  Navigator.pop(context);
-                  setState(() {
-                    _sortBy = 'title_asc';
-                  });
-                  _loadBookmarks();
-                },
-              ),
-              ListTile(
-                title: const Text('العنوان: ي-أ'),
-                leading: const Icon(Icons.sort_by_alpha),
-                selected: _sortBy == 'title_desc',
-                onTap: () {
-                  Navigator.pop(context);
-                  setState(() {
-                    _sortBy = 'title_desc';
-                  });
-                  _loadBookmarks();
-                },
-              ),
-            ],
-          ),
-    );
+    if (confirmed == true) {
+      final success = await BookmarksRepository.deleteBookmark(bookmark.id);
+      if (success) {
+        _loadBookmarks();
+        AppToasts.showSuccess(description: 'تم حذف العلامة المرجعية');
+      }
+    }
   }
 
   Future<void> _editBookmark(UserBookmarkModel bookmark) async {
@@ -414,10 +138,225 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
       context: context,
       bookmark: bookmark,
     );
-
     if (result == true) {
       await _loadBookmarks();
-      AppToasts.showSuccess(description: 'تم تحديث العلامة المرجعية بنجاح');
+      AppToasts.showSuccess(description: 'تم التحديث بنجاح');
     }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('العلامات المرجعية')),
+      body: Column(
+        children: [
+          _buildSearchFilters(),
+          // _buildStats(),
+          Expanded(
+            child: LoadingEmptyListScreen(
+              isLoading: _isLoading,
+              isEmpty: _filteredBookmarks.isEmpty,
+              title: 'لا توجد علامات مرجعية',
+              desc: 'ستظهر العلامات المرجعية هنا',
+              icon: Icons.note_alt_outlined,
+              childWidget: ListView.builder(
+                padding: const EdgeInsets.only(bottom: 80),
+                itemCount: _filteredBookmarks.length,
+                itemBuilder:
+                    (context, index) =>
+                        _buildBookmarkCard(_filteredBookmarks[index]),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSearchFilters() {
+    return FilterSearchBar(
+      sortByIcon: SortByIcon(
+        sortBy: _sortBy,
+        onSortChanged: (newSortBy) {
+          setState(() {
+            _sortBy = newSortBy;
+          });
+        },
+      ),
+      searchField: SearchField(
+        controller: _searchController,
+        hintText: 'البحث في العلامات المرجعية...',
+        onChanged: (value) {
+          updateFilteredBookmarks();
+        },
+      ),
+      filterChipsWidget: FilterChipsWidget(
+        items: _filtersChips,
+        singleSelect: true,
+        onSelected: (chips) {
+          // ابحث عن الفلتر المحدد
+          final selectedIndex = chips.indexWhere((chip) => chip.$2);
+          setState(() {
+            _selectedFilterIndex = selectedIndex >= 0 ? selectedIndex : 0;
+          });
+          updateFilteredBookmarks();
+        },
+      ),
+    );
+  }
+
+  // Widget _buildStats() {
+  //   if (_filteredBookmarks.isEmpty) return const SizedBox.shrink();
+
+  //   final bookCount =
+  //       _filteredBookmarks.where((b) => b.itemType == ItemType.book).length;
+  //   final lessonCount =
+  //       _filteredBookmarks.where((b) => b.itemType == ItemType.lesson).length;
+
+  //   return Container(
+  //     color: Colors.white,
+  //     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+  //     child: Row(
+  //       children: [
+  //         Text(
+  //           '${_filteredBookmarks.length} عنصر',
+  //           style: TextStyle(color: Colors.grey[600], fontSize: 12),
+  //         ),
+  //         if (bookCount > 0) ...[
+  //           const SizedBox(width: 16),
+  //           Icon(Icons.book, size: 14, color: Colors.green[600]),
+  //           const SizedBox(width: 4),
+  //           Text(
+  //             '$bookCount',
+  //             style: TextStyle(color: Colors.grey[600], fontSize: 12),
+  //           ),
+  //         ],
+  //         if (lessonCount > 0) ...[
+  //           const SizedBox(width: 16),
+  //           Icon(Icons.headphones, size: 14, color: Colors.blue[600]),
+  //           const SizedBox(width: 4),
+  //           Text(
+  //             '$lessonCount',
+  //             style: TextStyle(color: Colors.grey[600], fontSize: 12),
+  //           ),
+  //         ],
+  //       ],
+  //     ),
+  //   );
+  // }
+
+  Widget _buildBookmarkCard(UserBookmarkModel bookmark) {
+    final isBook = bookmark.itemType == ItemType.book;
+
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: InkWell(
+        onTap: () => _navigateToItem(bookmark),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: (isBook ? Colors.green : Colors.blue).withOpacity(
+                        0.1,
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      isBook ? Icons.book : Icons.headphones,
+                      color: isBook ? Colors.green[600] : Colors.blue[600],
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          bookmark.title,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Text(
+                              isBook ? 'كتاب' : 'درس',
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 12,
+                              ),
+                            ),
+                            const Text(
+                              ' • ',
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                            Text(
+                              'الموضع: ${bookmark.position}',
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  PopupMenuButton<String>(
+                    onSelected: (value) {
+                      if (value == 'edit') {
+                        _editBookmark(bookmark);
+                      } else if (value == 'delete') {
+                        _deleteBookmark(bookmark);
+                      }
+                    },
+                    itemBuilder:
+                        (context) => [
+                          const PopupMenuItem(
+                            value: 'edit',
+                            child: Row(
+                              children: [
+                                Icon(Icons.edit, size: 18),
+                                SizedBox(width: 8),
+                                Text('تعديل'),
+                              ],
+                            ),
+                          ),
+                          const PopupMenuItem(
+                            value: 'delete',
+                            child: Row(
+                              children: [
+                                Icon(Icons.delete, size: 18, color: Colors.red),
+                                SizedBox(width: 8),
+                                Text(
+                                  'حذف',
+                                  style: TextStyle(color: Colors.red),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                    child: const Icon(Icons.more_vert, color: Colors.grey),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

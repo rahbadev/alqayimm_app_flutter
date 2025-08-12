@@ -1,5 +1,4 @@
 import 'package:alqayimm_app_flutter/widgets/dialogs/reader_page_selector_dialog.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:pdfrx/pdfrx.dart';
 

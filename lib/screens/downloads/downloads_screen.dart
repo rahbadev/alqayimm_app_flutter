@@ -1,7 +1,6 @@
 import 'package:alqayimm_app_flutter/downloader/download_provider.dart';
 import 'package:alqayimm_app_flutter/downloader/download_task_model.dart';
 import 'package:alqayimm_app_flutter/main.dart';
-import 'package:alqayimm_app_flutter/utils/file_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:background_downloader/background_downloader.dart';

@@ -11,10 +11,10 @@ import 'package:alqayimm_app_flutter/utils/preferences_utils.dart';
 import 'package:alqayimm_app_flutter/widgets/bottom_sheets/speed_slider_bottom_sheet.dart';
 import 'package:alqayimm_app_flutter/widgets/dialogs/bookmark_dialog.dart';
 import 'package:alqayimm_app_flutter/widgets/dialogs/note_dialog.dart';
+import 'package:alqayimm_app_flutter/widgets/icons.dart';
 import 'package:alqayimm_app_flutter/widgets/toasts.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
-import 'package:http/http.dart' as http;
 import 'package:just_audio/just_audio.dart';
 import 'package:provider/provider.dart';
 
@@ -34,6 +34,18 @@ class AudioPlayerScreen extends StatefulWidget {
 
   @override
   State<AudioPlayerScreen> createState() => _AudioPlayerScreenState();
+
+  static void navigateTo(
+    BuildContext context,
+    List<LessonModel> items,
+    int index,
+  ) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => AudioPlayerScreen(lessons: items, initialIndex: index),
+      ),
+    );
+  }
 }
 
 class _AudioPlayerScreenState extends State<AudioPlayerScreen>
@@ -44,7 +56,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
   double _speed = 1.0;
   Duration _currentPosition = Duration.zero;
   Duration _duration = Duration.zero;
-  bool _isLoading = false;
+  bool _isLoading = true;
   bool _hasError = false;
   String? _errorMessage;
   bool _isInitAudioRunning = false;
@@ -57,7 +69,6 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
     _initAudio();
 
     _audioPlayer.positionStream.listen((pos) {
-      logger.i('Current position: ${pos.inMilliseconds}');
       setState(() => _currentPosition = pos);
       // احفظ الموضع فقط إذا كان المشغل جاهز وليس في البداية
       if (_isPlaying && pos.inMilliseconds > 1000) {
@@ -421,17 +432,17 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
         iconButton(
-          icon: Icons.note_add_outlined,
+          icon: AppIcons.addNote,
           onPressed: _addNote,
           tooltip: 'إضافة ملاحظة',
         ),
         iconButton(
-          icon: Icons.bookmark_add_outlined,
+          icon: AppIcons.addBookmark,
           onPressed: () => _addBookmark(lesson),
           tooltip: 'إضافة إشارة مرجعية',
         ),
         iconButton(
-          icon: Icons.speed,
+          icon: AppIcons.speed,
           color: _speed != 1.0 ? Theme.of(context).colorScheme.primary : null,
           onPressed: _showSpeedSheet,
         ),

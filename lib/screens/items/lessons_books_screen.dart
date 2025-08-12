@@ -1,29 +1,20 @@
 import 'package:alqayimm_app_flutter/db/main/models/base_content_model.dart';
-import 'package:alqayimm_app_flutter/db/user/db_constants.dart';
-import 'package:alqayimm_app_flutter/db/user/models/user_item_state_model.dart';
-import 'package:alqayimm_app_flutter/downloader/download_task_model.dart';
 import 'package:alqayimm_app_flutter/main.dart';
-import 'package:alqayimm_app_flutter/downloader/download_provider.dart';
+import 'package:alqayimm_app_flutter/providers/lessons_books_provider.dart';
+import 'package:alqayimm_app_flutter/screens/player/audio_player_screen.dart';
 import 'package:alqayimm_app_flutter/screens/reader/pdf_viewer_screen.dart';
-import 'package:alqayimm_app_flutter/widgets/buttons/items_icon_buttons.dart';
-import 'package:alqayimm_app_flutter/widgets/dialogs/custom_alert_dialog.dart';
-import 'package:alqayimm_app_flutter/widgets/download/download_progress_indicator.dart';
-import 'package:alqayimm_app_flutter/widgets/toasts.dart';
+import 'package:alqayimm_app_flutter/widgets/app_bar.dart';
+import 'package:alqayimm_app_flutter/widgets/main_items_list.dart';
 import 'package:flutter/material.dart';
 import 'package:alqayimm_app_flutter/db/enums.dart';
-import 'package:alqayimm_app_flutter/db/main/repo.dart';
-import 'package:alqayimm_app_flutter/db/main/db_helper.dart';
-import 'package:alqayimm_app_flutter/db/user/repos/user_item_status_repository.dart';
-import 'package:alqayimm_app_flutter/screens/player/audio_player_screen.dart';
 import 'package:alqayimm_app_flutter/transitions/fade_slide_route.dart';
 import 'package:alqayimm_app_flutter/widgets/cards/main_item_card.dart';
-import 'package:alqayimm_app_flutter/widgets/icons.dart';
-import 'package:alqayimm_app_flutter/widgets/main_items_list.dart';
 import 'package:provider/provider.dart';
+import 'package:alqayimm_app_flutter/widgets/icons.dart';
 
 enum ScreenType { books, lessons }
 
-class LessonsBooksScreen extends StatefulWidget {
+class LessonsBooksScreen extends StatelessWidget {
   final ScreenType screenType;
   final String title;
   final int? authorId;
@@ -45,10 +36,6 @@ class LessonsBooksScreen extends StatefulWidget {
     this.bookTypeSel,
   });
 
-  @override
-  State<LessonsBooksScreen> createState() => _LessonsBooksScreenState();
-
-  /// استخدم هذه الدالة للتنقل إلى الشاشة
   static void navigateToScreen({
     required BuildContext context,
     required ScreenType screenType,
@@ -75,381 +62,171 @@ class LessonsBooksScreen extends StatefulWidget {
       ),
     );
   }
-}
-
-class _LessonsBooksScreenState extends State<LessonsBooksScreen> {
-  late Future<List<BaseContentModel>> _itemsFuture;
-  List<BaseContentModel>? _items;
-
-  @override
-  void initState() {
-    super.initState();
-    _itemsFuture = _fetchItems();
-  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-        actions: [DownloadProgressIndicator()],
-      ),
-      body: MainItemsListView<dynamic>(
-        itemsFuture: _itemsFuture,
-        itemBuilder: (item, index) => _buildMainItem(item, index),
-        titleFontSize: 20,
+    return ChangeNotifierProvider(
+      create:
+          (_) =>
+              LessonsBooksProvider()..loadItems(
+                screenType:
+                    screenType == ScreenType.lessons
+                        ? ScreenType.lessons
+                        : ScreenType.books,
+                authorId: authorId,
+                materialId: materialId,
+                levelId: levelId,
+                categoryId: categoryId,
+                categorySel: categorySel,
+                bookTypeSel: bookTypeSel,
+              ),
+      child: Scaffold(
+        appBar: AppBarWidget(
+          title: title,
+          showDownloadIndicator: ShowDownloadProgress.onDownloading,
+        ),
+        body: Consumer<LessonsBooksProvider>(
+          builder: (context, provider, child) {
+            // تحويل البيانات إلى MainItem
+            final mainItems =
+                provider.items
+                    .map((item) => _buildMainItem(context, item, provider))
+                    .toList();
+
+            // استخدام MainItemsList الموحد
+            return MainItemsList(
+              items: mainItems,
+              titleFontSize: 20,
+              isLoading: provider.isLoading,
+            );
+          },
+        ),
       ),
     );
   }
 
-  // ==================== Data Fetching ====================
-
-  Future<List<BaseContentModel>> _fetchItems() async {
-    final db = await DbHelper.database;
-    final repo = Repo(db);
-
-    // جلب العناصر من قاعدة البيانات الرئيسية
-    final items = await _fetchMainItems(repo);
-
-    // جلب حالات المستخدم من قاعدة بيانات المستخدم
-    final userStatuses = await _fetchUserStatuses();
-
-    // دمج الحالات مع العناصر
-    final mergedItems = _mergeItemsWithStatuses(items, userStatuses);
-
-    return _items = mergedItems;
-  }
-
-  Future<List<BaseContentModel>> _fetchMainItems(Repo repo) async {
-    if (widget.screenType == ScreenType.books) {
-      return await repo.fetchBooks(
-        authorId: widget.authorId,
-        categorySel: widget.categorySel ?? CategorySel.all(),
-        bookTypeSel: widget.bookTypeSel ?? BookTypeSel.all(),
-      );
-    } else {
-      return await repo.fetchLessons(
-        materialId: widget.materialId,
-        authorId: widget.authorId,
-        levelId: widget.levelId,
-        categoryId: widget.categoryId,
-      );
-    }
-  }
-
-  Future<List<UserItemStatusModel>> _fetchUserStatuses() async {
-    return await UserItemStatusRepository.getItems(
-      itemType:
-          widget.screenType == ScreenType.lessons
-              ? ItemType.lesson
-              : ItemType.book,
-    );
-  }
-
-  List<BaseContentModel> _mergeItemsWithStatuses(
-    List<BaseContentModel> items,
-    List<UserItemStatusModel> userStatuses,
+  MainItem _buildMainItem(
+    BuildContext context,
+    BaseContentModel item,
+    LessonsBooksProvider provider,
   ) {
-    try {
-      // بناء خريطة للحالات حسب معرف العنصر
-      final statusMap = {for (var s in userStatuses) s.itemId: s};
-
-      // دمج الحالات مع العناصر
-      return items.map((item) {
-        final status = statusMap[item.id];
-        return item.copyWith(
-          isFavorite: status?.isFavorite ?? false,
-          isCompleted: status?.isCompleted ?? false,
-        );
-      }).toList();
-    } catch (e) {
-      logger.e('Error merging items with statuses: $e');
-      return items; // في حالة حدوث خطأ، نعيد العناصر الأصلية بدون دمج
-    }
-  }
-
-  // ==================== UI Building ====================
-
-  MainItem _buildMainItem(BaseContentModel item, int index) {
-    final itemConfig = _getItemConfiguration(item, index);
+    final (title, leadingContent, onItemTap) = _getItemConfiguration(
+      context,
+      item,
+      provider,
+    );
 
     return MainItem(
-      title: itemConfig.title,
-      leadingContent: itemConfig.leadingContent,
+      title: title,
+      leadingContent: leadingContent,
+      onItemTap: onItemTap,
       details: _buildItemDetails(item),
-      onItemTap: itemConfig.onItemTap,
-      actions: _buildItemActions(item, index),
+      actions: _buildItemActions(item),
     );
   }
 
-  _ItemConfiguration _getItemConfiguration(BaseContentModel item, int index) {
+  (String title, LeadingContent leadingContent, MainItemTapCallback onItemTap)
+  _getItemConfiguration(
+    BuildContext context,
+    BaseContentModel item,
+    LessonsBooksProvider provider,
+  ) {
     if (item is BookModel) {
-      return _ItemConfiguration(
-        title: item.name,
-        leadingContent: ImageLeading(
+      return (
+        item.name,
+        ImageLeading(
           imageUrl: item.bookThumbUrl,
           placeholderIcon: AppIcons.book,
         ),
-        onItemTap: (_) => _navigateToBookViewer(item),
+        (_) => _navigateToBookViewer(context, item),
       );
     } else if (item is LessonModel) {
-      return _ItemConfiguration(
-        title: item.lessonName,
-        leadingContent: IconLeading(icon: AppIcons.lessonItem),
-        onItemTap: (_) => _navigateToAudioPlayer(index),
+      return (
+        item.lessonName,
+        IconLeading(icon: AppIcons.lessonItem),
+        (_) => _navigateToAudioPlayer(
+          context,
+          provider.items.cast<LessonModel>(),
+          provider.items.indexOf(item),
+        ),
       );
     }
 
     throw UnimplementedError('Unsupported item type: ${item.runtimeType}');
   }
 
-  List<MainItemDetail> _buildItemDetails(BaseContentModel item) {
-    final details = <MainItemDetail>[];
+  // ==================== Navigation ====================
 
-    _addAuthorDetail(details, item);
-    _addCategoryDetail(details, item);
-
-    return details;
+  void _navigateToBookViewer(BuildContext context, BookModel book) {
+    logger.i('Tapped on book: ${book.runtimeType}');
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => PdfViewerScreen(book: book)),
+    );
   }
 
-  void _addAuthorDetail(List<MainItemDetail> details, BaseContentModel item) {
-    final authorName = item.authorName?.trim();
-    if (authorName != null && authorName.isNotEmpty) {
-      details.add(
-        MainItemDetail(
-          text: item is LessonModel ? authorName : 'المؤلف: $authorName',
-          icon: AppIcons.author,
-          iconColor: Colors.teal,
-          onTap: (_) => {},
-        ),
-      );
-    }
+  void _navigateToAudioPlayer(
+    BuildContext context,
+    List<LessonModel> items,
+    int index,
+  ) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AudioPlayerScreen(lessons: items, initialIndex: index),
+      ),
+    );
   }
 
-  void _addCategoryDetail(List<MainItemDetail> details, BaseContentModel item) {
-    final categoryName = item.categoryName?.trim();
-    if (categoryName != null && categoryName.isNotEmpty) {
-      details.add(
-        MainItemDetail(
-          text: 'التصنيف: $categoryName',
-          icon: Icons.category,
-          iconColor: Colors.blue,
-          onTap: (_) => {},
-        ),
-      );
-    }
-  }
-
-  List<Widget> _buildItemActions(BaseContentModel item, int index) {
+  List<MainItemDetail>? _buildItemDetails(BaseContentModel item) {
     return [
-      Consumer<DownloadProvider>(
-        builder: (context, downloadProvider, child) {
-          final downloadModel = downloadProvider.getDownloadInfo(item);
-          return DownloadButton(
-            downloadStatus:
-                downloadModel?.downloadStatus ?? DownloadStatus.none,
-            progress: downloadModel?.progress ?? 0.0,
-            onTap: () => _handleDownload(item, downloadProvider),
-          );
+      MainItemDetail(
+        text: 'تفاصيل العنصر',
+        icon: Icons.info,
+        iconColor: Colors.blue,
+        onTap: (detail) {
+          // Handle detail tap
         },
-      ),
-      FavIconButton(
-        isFavorite: item.isFavorite,
-        onTap: () => _toggleFavorite(index),
-      ),
-      CompleteIconButton(
-        isCompleted: item.isCompleted,
-        onTap: () => _toggleComplete(index),
-      ),
-      ActionIconButton.icon(
-        icon: AppIcons.share,
-        onTap: () => _handleShare(item),
-        tooltip: 'مشاركة',
       ),
     ];
   }
 
-  // ==================== Navigation ====================
-
-  void _navigateToBookViewer(BookModel book) {
-    logger.i('Tapped on book: ${book.runtimeType}');
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => PdfViewerScreenFinal(book: book)),
-    );
-  }
-
-  void _navigateToAudioPlayer(int index) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
+  List<Widget>? _buildItemActions(BaseContentModel item) {
+    return [
+      Builder(
         builder:
-            (_) => AudioPlayerScreen(
-              lessons: _items?.cast<LessonModel>() ?? [],
-              initialIndex: index,
+            (context) => IconButton(
+              icon: Icon(
+                item.isFavorite == true
+                    ? Icons.favorite
+                    : Icons.favorite_border,
+                color: item.isFavorite == true ? Colors.red : null,
+              ),
+              onPressed: () {
+                Provider.of<LessonsBooksProvider>(
+                  context,
+                  listen: false,
+                ).toggleFavorite(item);
+              },
             ),
       ),
-    );
+      Builder(
+        builder:
+            (context) => IconButton(
+              icon: Icon(
+                item.isCompleted == true
+                    ? Icons.check_circle
+                    : Icons.circle_outlined,
+                color: item.isCompleted == true ? Colors.green : null,
+              ),
+              onPressed: () {
+                Provider.of<LessonsBooksProvider>(
+                  context,
+                  listen: false,
+                ).toggleComplete(item);
+              },
+            ),
+      ),
+    ];
   }
-
-  // ==================== Action Handlers ====================
-
-  Future<void> _toggleFavorite(int index) async {
-    final item = _getValidItem(index);
-    if (item == null) return;
-
-    final success = await UserItemStatusRepository.toggleFavorite(
-      item.id,
-      _getItemType(item),
-    );
-
-    if (!success) {
-      _showErrorToast('حدث خطأ أثناء تحديث المفضلة');
-      return;
-    }
-
-    _updateItemState(
-      index,
-      (item) => item.copyWith(isFavorite: !item.isFavorite),
-    );
-  }
-
-  Future<void> _toggleComplete(int index) async {
-    final item = _getValidItem(index);
-    if (item == null) return;
-
-    final success = await UserItemStatusRepository.toggleCompleted(
-      item.id,
-      _getItemType(item),
-    );
-
-    if (!success) {
-      _showErrorToast('حدث خطأ أثناء تحديث الحالة');
-      return;
-    }
-
-    _updateItemState(
-      index,
-      (item) => item.copyWith(isCompleted: !item.isCompleted),
-    );
-  }
-
-  Future<void> _handleDownload(
-    BaseContentModel item,
-    DownloadProvider downloadProvider,
-  ) async {
-    final currentStatus = downloadProvider.getDownloadStatus(item);
-
-    switch (currentStatus) {
-      case DownloadStatus.none:
-        // بدء التنزيل
-        await downloadProvider.startDownload(context, item);
-        break;
-
-      case DownloadStatus.progress:
-        // التحقق من وجود التنزيل في القائمة النشطة
-        try {
-          final downloadInfo = downloadProvider.getDownloadInfo(item);
-          if (downloadInfo != null) {
-            _showDownloadOptionsDialog(downloadInfo, downloadProvider);
-          } else {
-            await downloadProvider.startDownload(context, item);
-          }
-        } catch (e) {
-          logger.e('Error fetching download info: $e');
-          // لا يوجد تنزيل نشط - محاولة بدء تنزيل جديد
-          if (mounted) {
-            await downloadProvider.startDownload(context, item);
-          }
-        }
-        break;
-      case DownloadStatus.downloaded:
-        // عرض خيارات الملف المنزل
-        _showDownloadedFileOptions(item, downloadProvider);
-        break;
-    }
-  }
-
-  void _showDownloadOptionsDialog(
-    DownloadTaskModel downloadModel,
-    DownloadProvider downloadProvider,
-  ) async {
-    final confirmed = await showInfoDialog(
-      context: context,
-      title: 'خيارات التنزيل',
-      subtitle: 'يتم تنزيل الملف هل تريد إيقاف التنزيل ؟',
-      confirmText: "إيقاف",
-    );
-    if (confirmed == true && mounted) {
-      await downloadProvider.pauseDownload(downloadModel);
-    }
-  }
-
-  void _showDownloadedFileOptions(
-    BaseContentModel item,
-    DownloadProvider downloadProvider,
-  ) async {
-    final confirmed = await showInfoDialog(
-      context: context,
-      title: 'خيارات الملف',
-      subtitle: 'تم تنزيل الملف مسبقاً، هل تريد حذف الملف ؟',
-      confirmText: "حذف",
-    );
-    if (confirmed == true) {
-      final success = await downloadProvider.removeDownload(item);
-      if (success && mounted) {
-        _showInfoToast('تم حذف الملف بنجاح');
-      } else {
-        _showErrorToast('فشل في حذف الملف');
-      }
-    }
-  }
-
-  void _handleShare(BaseContentModel item) {
-    // TODO: تنفيذ وظيفة المشاركة
-  }
-
-  // ==================== Helper Methods ====================
-
-  BaseContentModel? _getValidItem(int index) {
-    if (_items == null || index < 0 || index >= _items!.length) return null;
-    return _items![index];
-  }
-
-  ItemType _getItemType(BaseContentModel item) {
-    return item is LessonModel ? ItemType.lesson : ItemType.book;
-  }
-
-  void _updateItemState(
-    int index,
-    BaseContentModel Function(BaseContentModel) updater,
-  ) {
-    if (_items != null && index >= 0 && index < _items!.length) {
-      setState(() {
-        _items![index] = updater(_items![index]);
-      });
-    }
-  }
-
-  void _showErrorToast(String message) {
-    AppToasts.showError(description: message);
-  }
-
-  void _showInfoToast(String message) {
-    AppToasts.showInfo(description: message);
-  }
-}
-
-// ==================== Helper Classes ====================
-
-class _ItemConfiguration {
-  final String title;
-  final LeadingContent leadingContent;
-  final Function(MainItem) onItemTap;
-
-  const _ItemConfiguration({
-    required this.title,
-    required this.leadingContent,
-    required this.onItemTap,
-  });
 }

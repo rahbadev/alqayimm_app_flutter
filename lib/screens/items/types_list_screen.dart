@@ -3,20 +3,20 @@ import 'package:alqayimm_app_flutter/db/user/repos/user_item_status_repository.d
 import 'package:alqayimm_app_flutter/screens/items/lessons_books_screen.dart';
 import 'package:alqayimm_app_flutter/screens/items/material_list_screen.dart';
 import 'package:alqayimm_app_flutter/transitions/fade_slide_route.dart';
+import 'package:alqayimm_app_flutter/widgets/app_bar.dart';
 import 'package:alqayimm_app_flutter/widgets/cards/main_item_card.dart';
-import 'package:alqayimm_app_flutter/widgets/download/download_progress_indicator.dart';
+import 'package:alqayimm_app_flutter/widgets/download_progress_indicator.dart';
 import 'package:alqayimm_app_flutter/widgets/icons.dart';
 import 'package:alqayimm_app_flutter/widgets/main_items_list.dart';
 import 'package:flutter/material.dart';
 import 'package:alqayimm_app_flutter/db/main/models/type_model.dart';
-import 'package:alqayimm_app_flutter/main.dart'; // تأكد أن لديك RouteObserver هنا
 
-class TypesListScreen extends StatefulWidget {
+class TypesListScreen extends StatelessWidget {
   final List<TypeModel> items;
   final String title;
   final bool forShik;
   final bool isBooks;
-  final IconData icon;
+  final IconData mainIcon;
 
   const TypesListScreen({
     super.key,
@@ -24,11 +24,8 @@ class TypesListScreen extends StatefulWidget {
     required this.title,
     required this.forShik,
     required this.isBooks,
-    required this.icon,
+    required this.mainIcon,
   });
-
-  @override
-  State<TypesListScreen> createState() => _TypesListScreenState();
 
   static void navigateToScreen(
     BuildContext context,
@@ -45,45 +42,15 @@ class TypesListScreen extends StatefulWidget {
           items: types,
           forShik: forShik,
           isBooks: isBooks ?? false,
-          icon: icon,
+          mainIcon: icon,
         ),
       ),
     );
   }
-}
-
-class _TypesListScreenState extends State<TypesListScreen> with RouteAware {
-  late Future<List<MainItem>> _mainItemsFuture;
-
-  @override
-  void initState() {
-    super.initState();
-    _mainItemsFuture = _getMainItems(context);
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    routeObserver.subscribe(this, ModalRoute.of(context)!);
-  }
-
-  @override
-  void dispose() {
-    routeObserver.unsubscribe(this);
-    super.dispose();
-  }
-
-  @override
-  void didPopNext() {
-    // تم الرجوع لهذه الشاشة، أعد تحميل البيانات
-    setState(() {
-      _mainItemsFuture = _getMainItems(context);
-    });
-  }
 
   Future<List<MainItemDetail>> _getTypeDetails(TypeModel type) async {
     double percentage = 0.0;
-    if (!widget.forShik && !widget.isBooks) {
+    if (!forShik && !isBooks) {
       percentage = switch (type) {
         LevelModel() => await UserItemStatusRepository.getCompletionPercentage(
           levelId: type.id,
@@ -100,7 +67,7 @@ class _TypesListScreenState extends State<TypesListScreen> with RouteAware {
     return [
       MainItemDetail(
         text:
-            (widget.isBooks ? 'عدد الكتب: ' : 'عدد المواد: ') +
+            (isBooks ? 'عدد الكتب: ' : 'عدد المواد: ') +
             type.childCount.toString(),
         icon: AppIcons.smallCategoryMaterial,
         iconColor: Colors.blue,
@@ -124,29 +91,25 @@ class _TypesListScreenState extends State<TypesListScreen> with RouteAware {
 
   Future<List<MainItem>> _getMainItems(BuildContext context) async {
     return Future.wait(
-      widget.items.map((type) async {
+      items.map((type) async {
         final details = await _getTypeDetails(type);
-        final icon = type.icon ?? widget.icon;
+        final icon = type.icon ?? mainIcon;
         final title = type.name;
         return MainItem(
           leadingContent: IconLeading(icon: icon),
           title: title,
           details: details,
           onItemTap: (item) {
-            if (widget.isBooks) {
+            if (isBooks) {
               LessonsBooksScreen.navigateToScreen(
                 context: context,
                 screenType: ScreenType.books,
                 title: item.title,
                 categorySel:
-                    widget.forShik
-                        ? CategorySel.only([type.id])
-                        : CategorySel.all(),
+                    forShik ? CategorySel.only([type.id]) : CategorySel.all(),
                 bookTypeSel:
-                    widget.forShik
-                        ? BookTypeSel.all()
-                        : BookTypeSel.only([type.id]),
-                authorId: widget.forShik ? 27 : null,
+                    forShik ? BookTypeSel.all() : BookTypeSel.only([type.id]),
+                authorId: forShik ? 27 : null,
               );
             } else if (type is LevelModel) {
               MaterialsListScreen.navigateToScreen(
@@ -154,10 +117,10 @@ class _TypesListScreenState extends State<TypesListScreen> with RouteAware {
                 item.title,
                 LevelSel.only([type.id]),
                 CategorySel.all(),
-                widget.forShik ? 27 : null,
+                forShik ? 27 : null,
               );
             } else if (type is CategoryModel) {
-              if (widget.forShik) {
+              if (forShik) {
                 MaterialsListScreen.navigateToScreen(
                   context,
                   item.title,
@@ -182,16 +145,13 @@ class _TypesListScreenState extends State<TypesListScreen> with RouteAware {
   }
 
   @override
-  Widget build(BuildContext context) {
+  build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-        actions: [DownloadProgressIndicator()],
+      appBar: AppBarWidget(
+        title: title,
+        showDownloadIndicator: ShowDownloadProgress.onDownloading,
       ),
-      body: MainItemsListView<MainItem>(
-        itemsFuture: widget.items.isEmpty ? Future.value([]) : _mainItemsFuture,
-        itemBuilder: (item, index) => item,
-      ),
+      body: MainItemsFuture(itemsFuture: _getMainItems(context)),
     );
   }
 }

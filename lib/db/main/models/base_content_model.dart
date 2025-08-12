@@ -133,6 +133,7 @@ class LessonModel extends BaseContentModel {
     );
   }
 
+  @override
   ItemType get itemType => ItemType.lesson;
 }
 
@@ -217,5 +218,6 @@ class BookModel extends BaseContentModel {
     );
   }
 
+  @override
   ItemType get itemType => ItemType.book;
 }
