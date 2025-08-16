@@ -33,6 +33,7 @@ dependencies:
   cached_network_image: ^3.4.1
   circle_nav_bar: ^2.2.0
   connectivity_plus: ^6.1.1
+  expandable: ^5.0.1
   flutter:
     sdk: flutter
   flutter_localizations:

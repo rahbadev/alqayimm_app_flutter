@@ -112,7 +112,6 @@ class DownloadProvider extends ChangeNotifier {
 
   /// بدء تنزيل عنصر
   Future<bool> startDownload(
-    BuildContext context,
     BaseContentModel item, {
     bool forceDownload = false,
   }) async {
@@ -147,7 +146,7 @@ class DownloadProvider extends ChangeNotifier {
       }
 
       // ignore: use_build_context_synchronously
-      final canProceed = await _canDownloadProceed(context, item);
+      final canProceed = await _canDownloadProceed(item);
       logger.d('Can proceed with download: $canProceed');
       if (!canProceed) return false;
 
@@ -173,18 +172,15 @@ class DownloadProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> _canDownloadProceed(
-    BuildContext context,
-    BaseContentModel item,
-  ) async {
+  Future<bool> _canDownloadProceed(BaseContentModel item) async {
     // التحقق من نوع الاتصال
-    final canProceed = await _checkConnectionAndWarn(context);
+    final canProceed = await _checkConnectionAndWarn();
 
     return canProceed;
   }
 
   /// التحقق من نوع الاتصال قبل بدء التنزيل
-  Future<bool> _checkConnectionAndWarn(BuildContext context) async {
+  Future<bool> _checkConnectionAndWarn() async {
     final isWifiOnly = PreferencesUtils.requireWiFi;
     final connectionResult = await NetworkUtils.checkConnectionType(
       isWifiOnly: isWifiOnly,

@@ -44,6 +44,10 @@ class AppIcons {
   static const addBookmark = Icons.bookmark_add_outlined;
   static const speed = Icons.speed_outlined;
   static const addNote = Icons.note_add_outlined;
+
+  static const bookmarkBook = Foundation.book_bookmark;
+
+  static const bookmarkLesson = MaterialCommunityIcons.bookmark_music;
 }
 
 /// ودجيت أيقونة داخل Card مع خيارات متعددة للتخصيص
@@ -152,21 +156,26 @@ abstract class LeadingContent {
 class IconLeading extends LeadingContent {
   final IconData icon;
   final Color? color;
-  final double? size;
+  final double size;
+  final EdgeInsetsGeometry? padding;
 
-  IconLeading({required this.icon, this.color, this.size = 28});
+  IconLeading({required this.icon, this.color, this.size = 28, this.padding});
+
   @override
   Widget build(BuildContext context) => SizedBox(
-    width: 70,
-    height: 100,
+    width: size * 2.5,
+    height: size * 3.6,
     child: Center(
       child: Card(
+        margin: EdgeInsets.zero,
         clipBehavior: Clip.none,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(size * 0.57),
+        ),
         color: Theme.of(context).colorScheme.surfaceContainer,
         elevation: 1,
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: padding ?? EdgeInsets.all(size * 0.57),
           child: Icon(
             icon,
             color: color ?? Theme.of(context).colorScheme.primary,

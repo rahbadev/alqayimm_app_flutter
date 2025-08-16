@@ -73,7 +73,7 @@ class MainItemCard extends StatelessWidget {
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.w600,
                             fontSize: titleFontSize,
                             color: Theme.of(context).colorScheme.onSurface,
                           ),

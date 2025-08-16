@@ -153,6 +153,7 @@ class _MyHomePageState extends State<MyHomePage> {
           onPressMoreLeadingIcon: () {
             _showMoreOptions(context);
           },
+          showNightLightIcon: true,
           actions: [
             if (_selectedIndex == 1)
               IconButton(

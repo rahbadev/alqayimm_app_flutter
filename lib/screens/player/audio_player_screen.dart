@@ -21,6 +21,7 @@ import 'package:provider/provider.dart';
 class AudioPlayerScreen extends StatefulWidget {
   final List<LessonModel> lessons;
   final int initialIndex;
+  final int? positionMs;
   final void Function(LessonModel lesson, Duration position)? onAddNote;
   final void Function(LessonModel lesson)? onSpeedChange;
 
@@ -28,6 +29,7 @@ class AudioPlayerScreen extends StatefulWidget {
     super.key,
     required this.lessons,
     this.initialIndex = 0,
+    this.positionMs,
     this.onAddNote,
     this.onSpeedChange,
   });
@@ -38,11 +40,17 @@ class AudioPlayerScreen extends StatefulWidget {
   static void navigateTo(
     BuildContext context,
     List<LessonModel> items,
-    int index,
-  ) {
+    int index, {
+    int? positionMs,
+  }) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => AudioPlayerScreen(lessons: items, initialIndex: index),
+        builder:
+            (_) => AudioPlayerScreen(
+              lessons: items,
+              initialIndex: index,
+              positionMs: positionMs,
+            ),
       ),
     );
   }
@@ -142,11 +150,17 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
         );
       }
 
-      // استرجاع آخر موضع محفوظ
-      final lastPositionMs = await UserItemStatusRepository.getLastPosition(
-        lesson.id,
-        ItemType.lesson,
-      );
+      // استرجاع آخر موضع محفوظ أو موضع العلامة المرجعية
+      int? lastPositionMs;
+
+      if (widget.positionMs != null) {
+        lastPositionMs = widget.positionMs;
+      } else {
+        lastPositionMs = await UserItemStatusRepository.getLastPosition(
+          lesson.id,
+          ItemType.lesson,
+        );
+      }
       logger.i('Last position for ${lesson.id}: $lastPositionMs ms');
       if (lastPositionMs != null && lastPositionMs > 0) {
         final lastPosition = Duration(milliseconds: lastPositionMs);
@@ -261,7 +275,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
     final result = await NoteDialog.showNoteDialog(
       context: context,
       source:
-          '${lesson.materialName} - ${lesson.lessonName} (${AudioControls.formatDuration(_currentPosition)}s) | ${lesson.authorName}',
+          '${lesson.materialName} - ${lesson.name} | ${lesson.authorName} [${AudioControls.formatDuration(_currentPosition)}] ',
     );
 
     if (result == true) {}
@@ -389,7 +403,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
           final l = widget.lessons[idx];
           final isCurrent = idx == _currentIndex;
           return ListTile(
-            title: Text(l.lessonName),
+            title: Text(l.name),
             subtitle: Text(l.materialName ?? ''),
             leading:
                 isCurrent

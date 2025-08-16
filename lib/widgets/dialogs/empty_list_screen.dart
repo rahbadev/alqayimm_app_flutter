@@ -23,11 +23,11 @@ class LoadingEmptyListScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Widget content;
     if (isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    if (isEmpty) {
-      return Column(
+      content = const Center(child: CircularProgressIndicator());
+    } else if (isEmpty) {
+      content = Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(icon, size: 64),
@@ -43,7 +43,10 @@ class LoadingEmptyListScreen extends StatelessWidget {
             ),
         ],
       );
+    } else {
+      content = childWidget;
     }
-    return childWidget;
+
+    return Padding(padding: const EdgeInsets.all(8.0), child: content);
   }
 }

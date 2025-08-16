@@ -5,7 +5,6 @@ import 'package:alqayimm_app_flutter/screens/items/material_list_screen.dart';
 import 'package:alqayimm_app_flutter/transitions/fade_slide_route.dart';
 import 'package:alqayimm_app_flutter/widgets/app_bar.dart';
 import 'package:alqayimm_app_flutter/widgets/cards/main_item_card.dart';
-import 'package:alqayimm_app_flutter/widgets/download_progress_indicator.dart';
 import 'package:alqayimm_app_flutter/widgets/icons.dart';
 import 'package:alqayimm_app_flutter/widgets/main_items_list.dart';
 import 'package:flutter/material.dart';

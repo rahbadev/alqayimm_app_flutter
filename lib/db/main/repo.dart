@@ -350,6 +350,7 @@ WHERE m.${DbConstants.MATERIALS_ID} = ?
   }
 
   /*──────────────────── جلب درس بالمعرف ────────────────────*/
+
   Future<LessonModel?> getLessonById(int lessonId) async {
     final sql = '''
 SELECT 
@@ -369,6 +370,27 @@ WHERE l.id = ?
       return LessonModel.fromMap(rows.first);
     }
     return null;
+  }
+
+  Future<List<LessonModel>?> getLessonsByIds(List<int> lessonIds) async {
+    if (lessonIds.isEmpty) return null;
+
+    final placeholders = List.filled(lessonIds.length, '?').join(',');
+    final sql = '''
+SELECT 
+  l.*,
+  a.name AS author_name,
+  c.name AS category_name,
+  m.name AS material_name
+FROM lessons_table l
+LEFT JOIN materials_table m ON l.material_id = m.id
+LEFT JOIN authors_table a ON m.author_id = a.id
+LEFT JOIN categories_table c ON m.category_id = c.id
+WHERE l.id IN ($placeholders)
+''';
+
+    final rows = await _db.rawQuery(sql, lessonIds);
+    return rows.map(LessonModel.fromMap).toList();
   }
 
   /*──────────────────── جلب كتاب بالمعرف ────────────────────*/
@@ -391,5 +413,26 @@ WHERE b.${DbConstants.BOOKS_ID} = ?
       return BookModel.fromMap(rows.first);
     }
     return null;
+  }
+
+  Future<List<BookModel>?> getBooksByIds(List<int> bookIds) async {
+    if (bookIds.isEmpty) return null;
+
+    final placeholders = List.filled(bookIds.length, '?').join(',');
+    final sql = '''
+SELECT 
+  b.*,
+  a.${DbConstants.AUTHORS_NAME} AS author_name,
+  c.${DbConstants.CATEGORIES_NAME} AS category_name
+FROM ${DbConstants.BOOKS_TABLE} b
+LEFT JOIN ${DbConstants.AUTHORS_TABLE} a
+  ON b.${DbConstants.BOOKS_AUTHOR_ID} = a.${DbConstants.AUTHORS_ID}
+LEFT JOIN ${DbConstants.CATEGORIES_TABLE} c
+  ON b.${DbConstants.BOOKS_CATEGORY_ID} = c.${DbConstants.CATEGORIES_ID}
+WHERE b.${DbConstants.BOOKS_ID} IN ($placeholders)
+''';
+
+    final rows = await _db.rawQuery(sql, bookIds);
+    return rows.map(BookModel.fromMap).toList();
   }
 }

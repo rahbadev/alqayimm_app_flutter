@@ -100,7 +100,7 @@ class _FavoritesScreenState extends State<FavoritesScreen>
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('تم إزالة "${lesson.lessonName}" من المفضلة')),
+          SnackBar(content: Text('تم إزالة "${lesson.name}" من المفضلة')),
         );
       }
     }
@@ -220,7 +220,7 @@ class _FavoritesScreenState extends State<FavoritesScreen>
           child: ListTile(
             leading: const Icon(Icons.play_circle_outline, color: Colors.teal),
             title: Text(
-              lesson.lessonName,
+              lesson.name,
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             subtitle: Column(

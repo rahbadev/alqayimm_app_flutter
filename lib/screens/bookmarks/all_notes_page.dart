@@ -132,13 +132,6 @@ class _AllNotesPageState extends State<AllNotesPage> {
   }
 
   /// بناء كرت الملاحظة
-  Widget _buildNoteCard(UserNoteModel note) {
-    return NoteCard(
-      note: note,
-      onTap: () => _showNotePreview(note),
-      onActionSelected: (action) => _handleNoteAction(action, note),
-    );
-  }
 
   /// عرض معاينة الملاحظة
   Future<void> _showNotePreview(UserNoteModel note) async {
@@ -254,10 +247,16 @@ class _AllNotesPageState extends State<AllNotesPage> {
                     },
               ),
               childWidget: ListView.builder(
-                padding: const EdgeInsets.only(bottom: 80),
                 itemCount: _filteredNotes.length,
-                itemBuilder:
-                    (context, index) => _buildNoteCard(_filteredNotes[index]),
+                itemBuilder: (context, index) {
+                  final note = _filteredNotes[index];
+                  return NoteCard(
+                    note: note,
+                    onTap: () => _showNotePreview(note),
+                    onActionSelected:
+                        (action) => _handleNoteAction(action, note),
+                  );
+                },
               ),
             ),
           ),

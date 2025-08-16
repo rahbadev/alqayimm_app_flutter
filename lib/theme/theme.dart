@@ -377,12 +377,12 @@ class MaterialTheme {
 
   static Color success(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
-          ? onSuccessDark
-          : onSuccessLight;
-  static Color onSuccess(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark
           ? successDark
           : successLight;
+  static Color onSuccess(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? onSuccessDark
+          : onSuccessLight;
 
   static Color info(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark ? infoDark : infoLight;

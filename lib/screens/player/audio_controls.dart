@@ -38,6 +38,10 @@ class AudioControls extends StatelessWidget {
     return '$m:$s';
   }
 
+  static String formatPosition(int position) {
+    return formatDuration(Duration(milliseconds: position));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(

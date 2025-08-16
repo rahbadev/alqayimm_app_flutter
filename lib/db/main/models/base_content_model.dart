@@ -3,6 +3,7 @@ import 'package:alqayimm_app_flutter/db/user/db_constants.dart';
 
 abstract class BaseContentModel {
   final int id;
+  final String name;
   final int? authorId;
   final String? authorName;
   final int? categoryId;
@@ -13,6 +14,7 @@ abstract class BaseContentModel {
 
   const BaseContentModel({
     required this.id,
+    required this.name,
     this.authorId,
     this.authorName,
     this.categoryId,
@@ -25,6 +27,7 @@ abstract class BaseContentModel {
   // جعل copyWith abstract لإجبار الكلاسات الوراثة على تنفيذها
   BaseContentModel copyWith({
     int? id,
+    String? name,
     int? authorId,
     String? authorName,
     int? categoryId,
@@ -43,7 +46,6 @@ abstract class BaseContentModel {
 }
 
 class LessonModel extends BaseContentModel {
-  final String lessonName;
   final int materialId;
   final int? lessonNumber;
   final int? levelId;
@@ -55,7 +57,7 @@ class LessonModel extends BaseContentModel {
 
   const LessonModel({
     required super.id,
-    required this.lessonName,
+    required super.name,
     required this.materialId,
     this.lessonNumber,
     super.authorId,
@@ -76,7 +78,7 @@ class LessonModel extends BaseContentModel {
   factory LessonModel.fromMap(Map<String, dynamic> map) {
     return LessonModel(
       id: map['id'] as int,
-      lessonName: map['lesson_name'] as String,
+      name: map['lesson_name'] as String,
       materialId: map['material_id'] as int,
       materialName: map['material_name'] as String?,
       lessonNumber: map['lesson_number'] as int?,
@@ -95,7 +97,7 @@ class LessonModel extends BaseContentModel {
   @override
   LessonModel copyWith({
     int? id,
-    String? lessonName,
+    String? name,
     int? materialId,
     int? lessonNumber,
     int? authorId,
@@ -114,7 +116,7 @@ class LessonModel extends BaseContentModel {
   }) {
     return LessonModel(
       id: id ?? this.id,
-      lessonName: lessonName ?? this.lessonName,
+      name: name ?? this.name,
       materialId: materialId ?? this.materialId,
       lessonNumber: lessonNumber ?? this.lessonNumber,
       authorId: authorId ?? this.authorId,
@@ -138,7 +140,6 @@ class LessonModel extends BaseContentModel {
 }
 
 class BookModel extends BaseContentModel {
-  final String name;
   final int? bookTypeId;
   final String? aboutBook;
   final String? bookUrl;
@@ -148,7 +149,7 @@ class BookModel extends BaseContentModel {
 
   const BookModel({
     required super.id,
-    required this.name,
+    required super.name,
     super.authorId,
     super.categoryId,
     this.bookTypeId,

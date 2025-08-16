@@ -18,8 +18,9 @@ import 'package:provider/provider.dart';
 
 class PdfViewerScreen extends StatefulWidget {
   final BookModel book;
+  final int? initialPage;
 
-  const PdfViewerScreen({super.key, required this.book});
+  const PdfViewerScreen({super.key, required this.book, this.initialPage});
 
   @override
   State<PdfViewerScreen> createState() => _PdfViewerScreenState();
@@ -126,21 +127,25 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
   }
 
   Future<void> _loadLastPage() async {
-    if (bookId == null) return;
-    try {
-      final lastPage = await UserItemStatusRepository.getLastPosition(
-        bookId!,
-        ItemType.book,
-      );
-      if (lastPage != null && lastPage > 0 && lastPage <= _totalPages) {
-        _currentPage = lastPage;
-        if (controller.isReady) {
-          controller.goToPage(pageNumber: lastPage);
-        }
-        logger.i('Restored last page: $lastPage');
+    int? pageToGo = 0;
+    if (widget.initialPage != null) {
+      pageToGo = widget.initialPage;
+    } else if (bookId != null) {
+      try {
+        pageToGo = await UserItemStatusRepository.getLastPosition(
+          bookId!,
+          ItemType.book,
+        );
+      } catch (e) {
+        logger.e('Error loading last page', error: e);
       }
-    } catch (e) {
-      logger.e('Error loading last page', error: e);
+    }
+    if (pageToGo != null && pageToGo > 0 && pageToGo <= _totalPages) {
+      _currentPage = pageToGo;
+      if (controller.isReady) {
+        controller.goToPage(pageNumber: pageToGo);
+      }
+      logger.i('Restored page: $pageToGo');
     }
   }
 
@@ -176,8 +181,12 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
   Future<void> _addNote() async {
     await NoteDialog.showNoteDialog(
       context: context,
-      source: '$title - صفحة $_currentPage',
+      source: formatSource(widget.book, _currentPage),
     );
+  }
+
+  static String formatSource(BookModel book, int currentPage) {
+    return '${book.name} [$currentPage]';
   }
 
   @override
